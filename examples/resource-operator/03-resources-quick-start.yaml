@@ -1,0 +1,61 @@
+apiVersion: resource.streamnative.io/v1alpha1
+kind: PulsarConnection
+metadata:
+  name: pulsar-connection
+  namespace: pulsar
+spec:
+  adminServiceURL: http://192.168.1.120:8080
+  brokerServiceURL: pulsar://192.168.1.120:6650
+  clusterName: brokers
+
+---
+apiVersion: resource.streamnative.io/v1alpha1
+kind: PulsarTenant
+metadata:
+  name: pulsar-tenant-foo
+  namespace: pulsar
+spec:
+  name: foo
+  connectionRef:
+    name: pulsar-connection
+  adminRoles:
+  - admin
+  - ops
+  
+---
+apiVersion: resource.streamnative.io/v1alpha1
+kind: PulsarNamespace
+metadata:
+  name: pulsar-namespace-bar
+  namespace: pulsar
+spec:
+  name: foo/bar
+  connectionRef:
+    name: pulsar-connection
+  backlogQuotaLimitSize: 1Gi
+  backlogQuotaLimitTime: 24h
+  bundles: 16
+  messageTTL: 1h
+  backlogQuotaRetentionPolicy: producer_request_hold
+  maxProducersPerTopic: 2
+  maxConsumersPerTopic: 2
+  # optional
+  maxConsumersPerSubscription: 2
+  retentionTime: 20h
+  retentionSize: 2Gi
+  lifecyclePolicy: CleanUpAfterDeletion
+  
+---
+apiVersion: resource.streamnative.io/v1alpha1
+kind: PulsarTopic
+metadata:
+  name: foo-bar-topic
+  namespace: pulsar
+spec:
+  name: foo/bar/topic
+  connectionRef:
+    name: pulsar-connection
+  persistent: true
+  partitions: 2
+  maxProducers: 8
+  maxConsumers: 8

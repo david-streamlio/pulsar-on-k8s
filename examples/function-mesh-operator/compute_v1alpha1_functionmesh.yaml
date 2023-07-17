@@ -1,0 +1,77 @@
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: FunctionMesh
+metadata:
+  name: functionmesh-sample
+spec:
+  functions:
+    - name: ex1
+      className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+      image: streamnative/pulsar-functions-java-sample:2.9.2.23
+      replicas: 1
+      maxReplicas: 1
+      logTopic: persistent://public/default/logging-function-log
+      input:
+        topics:
+          - persistent://public/default/functionmesh-input-topic
+        typeClassName: java.lang.String
+      output:
+        topic: persistent://public/default/mid-topic
+        typeClassName: java.lang.String
+      pulsar:
+        pulsarConfig: "mesh-test-pulsar"
+      java:
+        jar: /pulsar/examples/api-examples.jar
+    # use "" to read jar from the container's file system
+        jarLocation: ""
+        extraDependenciesDir: random-dir/
+      # following value must be provided if no auto-filling is enabled
+      forwardSourceMessageProperty: true
+      autoAck: true
+      resources:
+        requests:
+          cpu: "0.1"
+          memory: 1G
+        limits:
+          cpu: "0.2"
+          memory: 1.1G
+      clusterName: pulsar
+    - name: ex2
+      className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+      image: streamnative/pulsar-functions-java-sample:2.9.2.23
+      replicas: 1
+      maxReplicas: 1
+      logTopic: persistent://public/default/logging-function-logs
+      input:
+        topics:
+          - persistent://public/default/mid-topic
+        typeClassName: java.lang.String
+      output:
+        topic: persistent://public/default/functionmesh-output-topic
+        typeClassName: java.lang.String
+      pulsar:
+        pulsarConfig: "mesh-test-pulsar"
+      java:
+        jar: /pulsar/examples/api-examples.jar
+    # use "" to read jar from the container's file system
+        jarLocation: ""
+        extraDependenciesDir: random-dir/
+      # following value must be provided if no auto-filling is enabled
+      forwardSourceMessageProperty: true
+      autoAck: true
+      resources:
+        requests:
+          cpu: "0.1"
+          memory: 1G
+        limits:
+          cpu: "0.2"
+          memory: 1.1G
+      clusterName: pulsar
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mesh-test-pulsar
+data:
+  webServiceURL: http://192.168.1.120:8080
+  brokerServiceURL: pulsar://192.168.1.120:6650
+
