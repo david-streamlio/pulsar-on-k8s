@@ -22,8 +22,7 @@ Pulsar cluster to handle incoming requests from clients.
 - **Resource Operator** (Optional): Allows you to manage Pulsar resources without the help of pulsar-admin or pulsarctl CLI tool.
 
 
-- **Function Mesh Operator** (Optional):
-
+- **Function Mesh Operator** (Optional): Allow you to run Pulsar Functions and connectors natively on Kubernetes.
 
 
 Requirements
