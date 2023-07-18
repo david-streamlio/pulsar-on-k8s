@@ -76,10 +76,13 @@ brokers-broker                      ClusterIP   10.152.183.218   <none>        6
 brokers-broker-headless             ClusterIP   None             <none>        6650/TCP,8080/TCP                              3h6m
 ```
 
-Next, you will modify the `./examples/resource-operator/00-resources-quick-start.yaml` file and change the `<BROKER-URL>` 
+Next, you will modify the `./resource-operator/configs/00-resources-quick-start.yaml` file and change the `<BROKER-URL>` 
 field to the IP address for your Broker. In this case, it would be `10.152.183.218`
 
 ```bash
+
+# Inside ./resource-operator/configs/00-resources-quick-start.yaml
+
 apiVersion: resource.streamnative.io/v1alpha1
 kind: PulsarConnection
 metadata:
@@ -93,7 +96,7 @@ spec:
 1️⃣ Once this is done, you can then use the following command to create a connection.
 
 ```bash
-kubectl apply -f ./examples/resource-operator/00-resources-quick-start.yaml -n pulsar
+kubectl apply -f ./resource-operator/configs/00-resources-quick-start.yaml -n pulsar
 
 pulsarconnection.resource.streamnative.io/pulsar-connection created
 ```
@@ -111,7 +114,7 @@ pulsar-connection   http://10.152.183.218:8080   pulsar://10.152.183.218:6650
 3️⃣ Add a tenant, namespace, and topic
 
 ```bash
-kubectl apply -f ./examples/resource-operator/01-resources-quick-start.yaml -n pulsar
+kubectl apply -f ./resource-operator/configs/01-resources-quick-start.yaml -n pulsar
 
 pulsarconnection.resource.streamnative.io/pulsar-connection created
 pulsartenant.resource.streamnative.io/pulsar-tenant-foo created
