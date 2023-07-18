@@ -18,7 +18,7 @@ spec:
         topic: persistent://public/default/mid-topic
         typeClassName: java.lang.String
       pulsar:
-        pulsarConfig: "mesh-test-pulsar"
+        pulsarConfig: "pulsar"
       java:
         jar: /pulsar/examples/api-examples.jar
     # use "" to read jar from the container's file system
@@ -49,7 +49,7 @@ spec:
         topic: persistent://public/default/functionmesh-output-topic
         typeClassName: java.lang.String
       pulsar:
-        pulsarConfig: "mesh-test-pulsar"
+        pulsarConfig: "pulsar"
       java:
         jar: /pulsar/examples/api-examples.jar
     # use "" to read jar from the container's file system
@@ -66,12 +66,4 @@ spec:
           cpu: "0.2"
           memory: 1.1G
       clusterName: pulsar
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: mesh-test-pulsar
-data:
-  webServiceURL: http://192.168.1.120:8080
-  brokerServiceURL: pulsar://192.168.1.120:6650
 

@@ -19,18 +19,18 @@ Pulsar cluster to handle incoming requests from clients.
 - **ZooKeeper Operator**: Manages the lifecycle of the ZooKeeper cluster. ZooKeeper stores critical metadata information about the Pulsar cluster and coordinates intra-cluster tasks.
 
 
-- **Resource Operator**: Allows you to manage Pulsar resources without the help of pulsar-admin or pulsarctl CLI tool.
+- **Resource Operator** (Optional): Allows you to manage Pulsar resources without the help of pulsar-admin or pulsarctl CLI tool.
 
 
-- **Function Mesh Operator**:
+- **Function Mesh Operator** (Optional):
 
 
 
 Requirements
 ------------
-- Install kubectl (v1.16 or higher), compatible with your cluster (+/- 1 minor release from your cluster).
-- Install Helm (v3.0.2 or higher).
-- Prepare a Kubernetes cluster (v1.16 or higher).
+- kubectl (v1.16 or higher), compatible with your cluster (+/- 1 minor release from your cluster).
+- Helm (v3.0.2 or higher).
+- Kubernetes cluster (v1.16 or higher).
 
 Ensure you have allocated enough resources to Kubernetes: at least 8Gb.
 
