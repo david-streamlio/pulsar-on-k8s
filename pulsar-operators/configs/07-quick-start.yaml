@@ -27,8 +27,8 @@ spec:
   pod:
     resources:
       requests:
-        cpu: 1
-        memory: 1Gi
+        cpu: 2
+        memory: 8Gi
     jvmOptions:
       memoryOptions:
       - >
@@ -47,13 +47,13 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 16Gi
+          storage: 40Gi
     dataLog:
       accessModes:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 8Gi
+          storage: 20Gi
     reclaimPolicy: Delete
   replicas: 3
 ---
@@ -67,8 +67,8 @@ spec:
   pod:
     resources:
       requests:
-        cpu: 2 
-        memory: 4Gi
+        cpu: 4 
+        memory: 8Gi
     jvmOptions:
       memoryOptions:
       - >
@@ -90,7 +90,7 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 10Gi
+            storage: 40Gi
     ledger:
       numDirsPerVolume: 1
       numVolumes: 1
@@ -99,7 +99,7 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 50Gi
+            storage: 100Gi
     reclaimPolicy: Delete
   zkServers: zookeepers-zk:2181
 ---
@@ -115,8 +115,8 @@ spec:
   pod:
     resources:
       requests:
-        cpu: 2
-        memory: 4Gi
+        cpu: 4
+        memory: 12Gi
     jvmOptions:
       memoryOptions:
       - >
@@ -139,7 +139,7 @@ spec:
       aop:
         enabled: true
         proxyEnabled: true
-  replicas: 2
+  replicas: 4
   zkServers: zookeepers-zk:2181
 ---
 apiVersion: pulsar.streamnative.io/v1alpha1
@@ -175,8 +175,8 @@ spec:
   pod:
     resources:
       requests:
-        cpu: 500m
-        memory: 512Mi
+        cpu: 2
+        memory: 4Gi
     jvmOptions:
       memoryOptions:
       - >
