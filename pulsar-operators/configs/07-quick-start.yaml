@@ -147,6 +147,30 @@ kind: PulsarProxy
 metadata:
   name: proxys
 spec:
+  apiObjects:
+    externalService:
+      exposeSSLPort: true
+      managed: true
+      type: LoadBalancer
+      ports:
+      - name: pulsarssl
+        port: 6651
+        targetPort: 6651
+      - name: https
+        port: 443
+        targetPort: 8443
+      - name: websocket-tls
+        port: 9443
+        targetPort: 9443
+      - name: kop
+        port: 9092
+        targetPort: 9092
+      - name: aop-proxy
+        port: 5673
+        targetPort: 5673
+      - name: mop-proxy
+        port: 5682
+        targetPort: 5682
   image: streamnative/sn-platform-slim:3.0.0.3
   pod:
     resources:
