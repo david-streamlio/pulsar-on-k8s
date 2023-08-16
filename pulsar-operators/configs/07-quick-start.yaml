@@ -33,12 +33,20 @@ spec:
       memoryOptions:
       - >
         -XX:MaxRAMPercentage=85
+        -XX:+AlwaysPreTouch
       gcOptions:
       - >
         -XX:+UseZGC
         -Djute.maxbuffer=10485760
         -Dzookeeper.forceSync=no
         -XX:-ZUncommit
+      gcLoggingOptions:
+      - >
+        -Xlog:gc*:file=/tmp/zk_gc.log::filecount=5,filesize=5m
+      extraOptions:
+      - >
+        -XX:CompileThreshold=2000
+        -XX:+PrintCompilation
     securityContext:
       runAsNonRoot: true
   persistence:
@@ -73,12 +81,20 @@ spec:
       memoryOptions:
       - >
         -XX:MaxRAMPercentage=45
+        -XX:+AlwaysPreTouch
       gcOptions:
       - >
         -XX:+UseZGC
         -Djute.maxbuffer=10485760
         -Dzookeeper.forceSync=no
         -XX:-ZUncommit
+      gcLoggingOptions:
+      - >
+        -Xlog:gc*:file=/tmp/bk_gc.log::filecount=5,filesize=5m
+      extraOptions:
+      - >
+        -XX:CompileThreshold=2000
+        -XX:+PrintCompilation
     securityContext:
       runAsNonRoot: true
   storage:
@@ -121,12 +137,21 @@ spec:
       memoryOptions:
       - >
         -XX:MaxRAMPercentage=45
+        -XX:+AlwaysPreTouch
       gcOptions:
       - >
         -XX:+UseZGC
         -Djute.maxbuffer=10485760
         -Dzookeeper.forceSync=no
         -XX:-ZUncommit
+        -XX:+UseNUMA
+      gcLoggingOptions:
+      - >
+        -Xlog:gc*:file=/tmp/br_gc.log::filecount=5,filesize=5m
+      extraOptions:
+      - >
+        -XX:CompileThreshold=2000
+        -XX:+PrintCompilation
     securityContext:
       runAsNonRoot: true
   config:
@@ -147,6 +172,30 @@ kind: PulsarProxy
 metadata:
   name: proxys
 spec:
+  apiObjects:
+    externalService:
+      exposeSSLPort: true
+      managed: true
+      type: LoadBalancer
+      ports:
+      - name: pulsarssl
+        port: 6651
+        targetPort: 6651
+      - name: https
+        port: 443
+        targetPort: 8443
+      - name: websocket-tls
+        port: 9443
+        targetPort: 9443
+      - name: kop
+        port: 9092
+        targetPort: 9092
+      - name: aop-proxy
+        port: 5673
+        targetPort: 5673
+      - name: mop-proxy
+        port: 5682
+        targetPort: 5682
   image: streamnative/sn-platform-slim:3.0.0.3
   pod:
     resources:
@@ -157,12 +206,20 @@ spec:
       memoryOptions:
       - >
         -XX:MaxRAMPercentage=45
+        -XX:+AlwaysPreTouch
       gcOptions:
       - >
         -XX:+UseZGC
         -Djute.maxbuffer=10485760
         -Dzookeeper.forceSync=no
         -XX:-ZUncommit
+      gcLoggingOptions:
+      - >
+        -Xlog:gc*:file=/tmp/px_gc.log::filecount=5,filesize=5m
+      extraOptions:
+      - >
+        -XX:CompileThreshold=2000
+        -XX:+PrintCompilation
     securityContext:
       runAsNonRoot: true
   brokerAddress: brokers-broker
