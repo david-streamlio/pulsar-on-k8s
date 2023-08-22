@@ -149,19 +149,9 @@ metadata:
 spec:
   apiObjects:
     externalService:
-      exposeSSLPort: true
       managed: true
       type: LoadBalancer
       ports:
-      - name: pulsarssl
-        port: 6651
-        targetPort: 6651
-      - name: https
-        port: 443
-        targetPort: 8443
-      - name: websocket-tls
-        port: 9443
-        targetPort: 9443
       - name: kop
         port: 9092
         targetPort: 9092
@@ -190,5 +180,5 @@ spec:
     securityContext:
       runAsNonRoot: true
   brokerAddress: brokers-broker
-  replicas: 2
+  replicas: 3
 
