@@ -42,3 +42,4 @@ Getting Started Guides
 
 Resources
 ---
+- [Operator License](https://streamnative.io/community-licence)
