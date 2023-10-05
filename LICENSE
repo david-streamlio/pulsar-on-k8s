@@ -1,0 +1,105 @@
+This StreamNative Software Community License Agreement (this “Agreement”) sets forth the terms and conditions on which StreamNative, Inc. (“StreamNative”) makes available the Zookeeper Operator, the Pulsar Operator and the Bookkeeper Operator software applications (collectively, known as the “StreamNative Software”).  BY INSTALLING, DOWNLOADING, ACCESSING, USING AND/OR DISTRIBUTING THE STREAMNATIVE SOFTWARE, YOU ACKNOWLEDGE AND AGREE THAT YOU HAVE CAREFULLY READ, UNDERSTAND AND AGREE TO THE TERMS AND CONDITIONS OF THIS AGREEMENT.  IF YOU DO NOT AGREE TO ALL OF THESE TERMS AND CONDITIONS, YOU MUST NOT USE THE STREAMNATIVE SOFTWARE.  IF YOU ARE RECEIVING THE STREAMNATIVE SOFTWARE ON BEHALF OF A LEGAL ENTITY, YOU REPRESENT AND WARRANT THAT YOU HAVE THE ACTUAL AUTHORITY TO AGREE TO THE TERMS AND CONDITIONS OF THIS AGREEMENT ON BEHALF OF SUCH ENTITY.
+
+PLEASE READ:  THIS AGREEMENT CONTAINS A MANDATORY ARBITRATION AGREEMENT REQUIRING ANY DISPUTE BETWEEN YOU AND STREAMNATIVE, SUBJECT TO LIMITED EXCEPTIONS, TO BE RESOLVED BY FINAL AND BINDING ARBITRATION ON AN INDIVIDUAL BASIS AND REQUIRING YOU TO FOREGO JURY TRIALS, CLASS OR COLLECTIVE ACTIONS OR PROCEEDINGS, AND ALL OTHER TYPES OF COURT PROCEEDINGS OF ANY KIND.  YOU ACKNOWLEDGE THAT YOU UNDERSTAND AND EXPRESSLY AGREE TO THE MANDATORY ARBITRATION AGREEMENT.  PLEASE READ IT CAREFULLY.
+
+As used in this Agreement, “Licensee” means you, an individual, or the entity on whose behalf you are receiving the StreamNative Software.
+
+‍
+
+1. License Grant; Restrictions
+1.1. License Grant.
+Subject to your continued compliance with the terms and conditions of this Agreement, StreamNative hereby grants to Licensee a non-exclusive, royalty-free, worldwide, non-transferable, non-sublicenseable revocable right and license during the Term (as defined below) to : (a) access and use the StreamNative Software; (b) prepare modifications (“SNS Modifications”) and derivative works (“SNS Derivative Works”) of the StreamNative Software; (c) distribute the StreamNative Software (in source code or object code form); and (d) reproduce the StreamNative Software.  Notwithstanding any other term or condition set forth in this Agreement, Licensee is not granted any right or license to, and Licensee shall not, use the StreamNative Software and/or any SNS Modification(s) and/or SNS Derivative Work(s) for any Excluded Purpose (as defined below).  For purposes of this Agreement, “Excluded Purpose” means (a) making available (and/or allowing any third party to make available) the StreamNative Software and/or any SNS Modification(s) and/or SNS Derivative Work(s) on any software-as-a-service, platform-as-a-service, infrastructure-as-a-service and/or other similar online service basis, (b) using (and/or allowing any third party to use) the StreamNative Software and/or any SNS Modification(s) and/or SNS Derivative Work(s) in any manner that competes with StreamNative and/or (c) using (and/or allowing any third party to use) the StreamNative Software and/or any SNS Modification(s) and/or SNS Derivative Work(s) for and/or on behalf of any competitor of StreamNative.
+
+1.2 Restrictions
+In consideration of the right and license set forth above in Section 1.1, Licensee agrees to the following restrictions:
+
+1.2.1. Licensee must cause any SNS Modification(s) and/or SNS Derivative Work(s) to carry prominent notices stating that Licensee modified and/or created derivative works of the StreamNative Software (as applicable);
+
+1.2.2. Licensee shall not (and shall not allow any third party to) remove any product identification, copyright, trademark and/or other proprietary notice contained in the StreamNative Software;
+
+1.2.3. On each copy of the StreamNative Software, Licensee shall reproduce and not remove or alter all StreamNative or third party copyright or other proprietary notices contained in the Software;
+
+1.2.4. Licensee shall not (and shall not allow any third party to) use the StreamNative Software for any unlawful, invasive, infringing, abusive, tortious, defamatory, libelous, or fraudulent purpose;
+
+1.2.5. Licensee shall not (and shall not allow any third party) to use the StreamNative Software in violation of third-party publicity or privacy rights;
+
+1.2.6. Licensee shall not (and shall not allow any third party to) use the StreamNative Software to send unsolicited communications, promotions advertisements, or spam;
+
+1.2.7. Licensee shall use the StreamNative Software in full compliance with all export laws and regulations of any governing body in the United States (including economic and trade sanctions administered by the Office of Foreign Assets Control), the European Union, China and any other jurisdiction in which such benefits, goods or services are obtained; and
+
+1.2.8. Licensee shall not use the StreamNative Software to store or transmit malicious code.
+
+1.3. Reservation of Rights.
+All rights not expressly granted in Agreement are expressly reserved to StreamNative and respective third parties, as appropriate.
+
+1.4. No Maintenance.
+StreamNative is not obligated to provide maintenance, support or updates to Licensee for the StreamNative Software.
+
+1.5. No Sublicensing.
+The license grant set forth above in Section 1.1 does not include the right to sublicense the StreamNative Software.  If Licensee provides the StreamNative Software and a copy this Agreement to a third party, such third party may use the StreamNative Software upon carefully reading and agreeing to all of the terms and conditions of this Agreement.
+
+1.6. Apache License, Version 2.0.
+The StreamNative Software incorporates the following components that owned by a third party and licensed to Licensee under the terms and conditions of Apache License, Version 2.0 currently located at https://www.apache.org/licenses/LICENSE-2.0 .
+
+2. SNS Modifications and SNS Derivative Works.
+2.1. Licensee may add its own copyright notices to SNS Modifications and SNS Derivative Works and may provide additional or different license terms and conditions for use, reproduction, or distribution of SNS Modifications and SNS Derivative Works.  While redistributing the SNS Modifications and SNS Derivative Works, Licensee may choose to offer, for a fee or free of charge, support, warranty, indemnity, or other obligations solely with respect to the SNS Modifications and SNS Derivative Works.  Licensee, and not StreamNative, will be solely responsible for any and all such obligations.
+
+2.2. Licensee hereby grants to StreamNative a perpetual, irrevocable, fully paid-up, royalty-free, transferable, sublicensable (through multiple levels of sublicensees), worldwide right and license to reproduce, distribute, display and perform (whether publicly or otherwise), prepare derivative works of and otherwise modify, make, have made, sell, offer to sell, import and otherwise use and exploit (and have others exercise such rights on behalf of StreamNative) all or any portion of SNS Modifications and SNS Derivative Works (under all of Licensee’s copyrights, patent rights and other intellectual property rights therein) in connection with developing, enhancing, marketing, distributing, providing, maintaining, supporting or otherwise using or exploiting any product(s) and/or service(s) of StreamNative and/or any of its customers and/or licensees, in any form or media (now known or later developed), without any obligation to account to Licensee and/or any third party.
+
+3. Term; Termination.
+3.1. Term.
+This term of this Agreement commences on the date that Licensee first installs, downloads, accesses, distributes and/or otherwise uses the StreamNative Software and continues until the date on which this Agreement terminates pursuant to the below provisions of Section 3.2.
+
+3.2. Termination.
+If Licensee breaches any of its conditions or obligations under this Agreement, this Agreement will terminate automatically and the License will terminate automatically and permanently.  StreamNative may terminate this Agreement at any time without cause by providing Licensee with thirty (30) days advance notice of such termination.
+
+3.3. Effect of Termination.
+Upon the termination of this Agreement:  (a) all of the rights and licenses granted to Licensee hereunder shall automatically terminate; and (b) Licensee agrees to destroy all copies of the StreamNative Software in its possession, custody and/or control.  Notwithstanding any other provision of this Agreement, Sections 1.2, 1.3, 2.2, 3.3, 4, 5, 6, 7 and 8 shall survive the termination of this Agreement.
+
+4. Proprietary Rights.
+Notwithstanding anything to the contrary contained in this Agreement, except for the limited right and license expressly set forth above in Section 1.1, StreamNative and its licensors have and will retain all rights, title and interest (including, without limitation, all patent, copyright, trademark, trade secret and other intellectual property rights) in and to the StreamNative Software, and all copies, modifications and derivative works thereof made by or on behalf of StreamNative (including any changes which incorporate any of Licensee’s ideas, feedback or suggestions).  Licensee acknowledges that Licensee is obtaining only a limited right and license to use the StreamNative Software and that irrespective of any use of the words or terms set forth in this Agreement no ownership rights are being conveyed to Licensee hereunder or otherwise.
+
+5. Disclaimer.
+LICENSEE UNDERSTANDS AND AGREES THAT LICENSEE’S USE OF THE STREAMNATIVE SOFTWARE AND/OR ANY OF ITS COMPONENTS IS AT LICENSEE’S SOLE RISK AND THAT THE STREAMNATIVE SOFTWARE AND ITS COMPONENTS, ARE PROVIDED ON AN “AS IS,” “WHERE IS,” AND “WHERE AVAILABLE” BASIS, AND ARE SUBJECT TO CHANGE AT ANY TIME WITHOUT NOTICE TO LICENSEE.  STREAMNATIVE EXPRESSLY DISCLAIMS ANY AND ALL LIABILITY ARISING FROM THE UNAUTHORIZED ACCESS TO OR ALTERATION OF TRANSMISSIONS OR DATA OR FOR ANY MATERIAL OR DATA SENT OR RECEIVED OR NOT SENT OR RECEIVED VIA THE STREAMNATIVE SOFTWARE AND/OR ANY OF ITS COMPONENTS.  LICENSEE ACKNOWLEDGES THAT STREAMNATIVE DOES NOT MAKE ANY REPRESENTATION OR WARRANTY THAT THE STREAMNATIVE SOFTWARE AND/OR ANY OF ITS COMPONENTS WILL BE MADE AVAILABLE ON AN UNINTERRUPTED BASIS, SECURE AND/OR ERROR-FREE.  TO THE FULLEST EXTENT PERMITTED BY LAW, STREAMNATIVE DISCLAIMS ALL REPRESENTATIONS, WARRANTIES AND CONDITIONS OF ANY KIND (EXPRESS, IMPLIED, STATUTORY OR OTHERWISE, INCLUDING, BUT NOT LIMITED TO, THE WARRANTIES OF MERCHANTABILITY, FITNESS OR SUITABILITY FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT OF PROPRIETARY RIGHTS) AS TO THE STREAMNATIVE SOFTWARE AND ITS COMPONENTS.
+
+6. Limitation of Liability.
+6.1. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT WILL STREAMNATIVE AND/OR ITS AFFILIATES, AND/OR ITS OR THEIR EMPLOYEES, CONTRACTORS, SUPPLIERS, LICENSORS AND/OR AGENTS (INCLUDING, WITHOUT LIMITATION, ANY TESTERS) BE LIABLE FOR ANY INDIRECT, SPECIAL, CONSEQUENTIAL, INCIDENTAL AND/OR PUNITIVE DAMAGES, AND/OR LOST PROFITS, REVENUE, INTEREST OR BUSINESS, WHETHER FORESEEABLE OR UNFORESEEABLE, ARISING OUT OF AND/OR RELATED TO LICENSEE’S RELIANCE ON OR THE USE OF, DELAY IN BEING ABLE TO USE, OR INABILITY TO USE THE STREAMNATIVE SOFTWARE, OR ANY COMPONENT THEREOF, REGARDLESS OF LEGAL THEORY, EVEN IF STREAMNATIVE HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+6.2. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT WILL THE AGGREGATE LIABILITY OF STREAMNATIVE AND/OR ITS AFFILIATES, AND/OR ITS OR THEIR EMPLOYEES, CONTRACTORS, SUPPLIERS, LICENSORS AND/OR AGENTS (INCLUDING, WITHOUT LIMITATION, ANY TESTERS) ARISING OUT OF AND/OR RELATING IN ANY WAY TO THE STREAMNATIVE SOFTWARE EXCEED THE GREATER OF THE AMOUNT THAT LICENSEE HAS THEN PAID TO USE THE STREAMNATIVE SOFTWARE AND ONE HUNDRED UNITED STATES DOLLARS (US$100).
+
+7. Binding Arbitration and Class Action Waiver Agreement (“Arbitration Agreement”).
+7.1. Informal Dispute Resolution.
+In the event of any dispute, claim, or controversy arising out of or relating to this Agreement, or the existence, breach, termination, enforcement, interpretation, or validity thereof (collectively, “Disputes”), please contact StreamNative at 44 Tehama Street, San Francisco, CA, 94105, Attention: StreamNative Legal, and we will try to resolve your concerns through informal negotiation within sixty (60) days from the date of the notice of Dispute is received.  If we cannot resolve the Dispute after sixty (60) days, either party may request arbitration as explained in this section.
+
+7.2. Notice of Dispute
+If any party intends to seek arbitration, the party seeking arbitration must first notify the other party of the Dispute in writing.  Notice should be sent to 44 Tehama Street, San Francisco, CA, 94105, Attention: StreamNative Legal.  The notice must include your name, address, and contact information, the facts giving rise to the Dispute, and the relief requested.
+
+7.3. Mandatory Binding Arbitration.
+By agreeing to these Terms of Use, Licensee agrees that any Dispute shall be finally settled by binding individual arbitration in accordance with the rules and procedures of the American Arbitration Association (“AAA”) in San Francisco, California, USA, and not in a court of law in any jurisdiction, and not in a class, representative, or consolidated action or proceeding, as further set forth below.  Licensee and StreamNative agree that one (1) arbitrator, and not any federal, state, or local court or agency, shall have exclusive authority to resolve any Disputes relating to the interpretation, applicability, enforceability, or formation of this Arbitration Agreement, including any claim that all or any part of this Arbitration Agreement is void or voidable.  The arbitrator shall also be responsible for determining all threshold arbitrability issues, including issues relating to whether any of the terms and conditions of this Agreement are unconscionable or illusory and any defense to arbitration, including waiver, delay, laches, or estoppel.  Judgment of the award rendered by the arbitrator may be confirmed, reduced to judgment, and entered in any court of competent jurisdiction.
+
+7.4. Class Action Waiver.
+Licensee acknowledges and agrees that Licensee and StreamNative are each waiving the right to a trial by jury or to participate as a plaintiff or class member in any purported class action or representative proceeding.  Unless both Licensee and StreamNative agree in writing, any arbitration will be conducted only on an individual basis and not in a class, collective, consolidated, or representative proceeding.  If any court or arbitrator determines that the class action waiver set forth in this Section is void or unenforceable for any reason or that an arbitration can proceed on a class basis, then the entirety of the Arbitration Agreement set forth in this Section will be deemed null and void and Licensee and StreamNative will be deemed to have not agreed to arbitrate Disputes on an individual basis.  Notwithstanding Licensee’s and StreamNative’s agreement to resolve all Disputes through arbitration, Licensee and StreamNative each retain the right to seek injunctive or other equitable relief in a court of competent jurisdiction to prevent the actual or threatened infringement, misappropriation, or violation of a party’s copyrights, trademarks, trade secrets, patents, or other intellectual property rights.
+
+7.5. Rules, Procedures, and Governing Law.
+The arbitration will be administered by the AAA under its Commercial Arbitration Rules and any supplementary rules then in effect (the “AAA Rules”), except as modified by the terms and conditions of this Agreement.  The AAA Rules are available at www.adr.org or by calling the AAA at 1-800-778-7879.  The rules of the arbitral forum will govern all aspects of this arbitration, except to the extent those rules conflict with the terms and conditions of this Agreement.  Notwithstanding any choice of law or other provision in this Agreement, Licensee and StreamNative agree and acknowledge that this Arbitration Agreement evidences a transaction involving interstate commerce and that the Federal Arbitration Act, 9 U.S.C. § 1 et seq. (“FAA”) will govern its interpretation and enforcement and proceedings pursuant thereto.  It is the intent of Licensee and StreamNative that the FAA and AAA Rules shall preempt all state laws to the fullest extent permitted by law.  If the FAA and AAA Rules are found to not apply to any issue that arises under this Arbitration Agreement or the enforcement thereof, that issue will be resolved under the laws of the State of California, without regard to its conflict of laws provisions.  A party who desires to initiate an arbitration must submit a written Demand for Arbitration to the AAA and give notice to the other party as specified in the AAA Rules.  The AAA provides a form Demand for Arbitration at www.adr.org.  You can contact AAA for more information on how to commence an arbitration proceeding at www.adr.org or 1-800-778-7879.
+
+8. General.
+8.1. Governing Law.
+This Agreement shall be construed under the internal laws of the State of California and the United States, without regard to choice of law provisions.  StreamNative and Licensee agree that the state and/or federal courts located in the Santa Clara County, California, USA shall have exclusive jurisdiction over any dispute arising hereunder.  StreamNative and Licensee waive any objection it may have to such venue.
+
+8.2. Assignment.
+StreamNative shall have the right to assign or license this Agreement, or any of its rights or obligations hereunder to any.  This Agreement and Licensee’s rights and obligations hereunder may not be assigned by Licensee without the prior written consent of StreamNative.  Any purported assignment, sale, transfer, delegation or other disposition, except as permitted herein, will be null and void.  Subject to the foregoing, this Agreement will be binding upon and will inure to the benefit of the parties and their respective successors and permitted assigns.
+
+8.3. Other.
+This Agreement is the entire agreement between the parties regarding the subject matter hereof. No amendment or modification of this Agreement will be valid or binding upon the parties unless made in writing and signed by the duly authorized representatives of both parties.  In the event that any provision, including without limitation any condition, of this Agreement is held to be unenforceable, this Agreement and all licenses and rights granted hereunder will immediately terminate.  Waiver by StreamNative of a breach of any provision of this Agreement or the failure by StreamNative to exercise any right hereunder will not be construed as a waiver of any subsequent breach of that right or as a waiver of any other right.
+
+8.4. Questions.
+Questions, comments and requests in relation to the terms and conditions of this Agreement should be sent to StreamNative via email at info@streamnative.io, or via regular mail to:
+
+StreamNative
+
+Attention:  Customer Support
+
+44 Tehama Street
+
+San Francisco, CA 94105
