@@ -1,0 +1,221 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+---
+apiVersion: zookeeper.streamnative.io/v1alpha1
+kind: ZooKeeperCluster
+metadata:
+  name: zookeepers
+spec:
+  image: streamnative/sn-platform-slim:3.0.0.3
+  pod:
+    resources:
+      requests:
+        cpu: 2
+        memory: 8Gi
+    jvmOptions:
+      memoryOptions:
+      - >
+        -XX:MaxRAMPercentage=85
+        -XX:+AlwaysPreTouch
+      gcOptions:
+      - >
+        -XX:+UseZGC
+        -Djute.maxbuffer=10485760
+        -Dzookeeper.forceSync=no
+        -XX:-ZUncommit
+      gcLoggingOptions:
+      - >
+        -Xlog:gc*:file=/tmp/zk_gc.log::filecount=5,filesize=5m
+      extraOptions:
+      - >
+        -XX:CompileThreshold=2000
+        -XX:+PrintCompilation
+    securityContext:
+      runAsNonRoot: true
+  persistence:
+    data:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 40Gi
+      storageClassName: ssd-raid
+    dataLog:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 20Gi
+      storageClassName: nvme-raid
+    reclaimPolicy: Delete
+  replicas: 3
+---
+apiVersion: bookkeeper.streamnative.io/v1alpha1
+kind: BookKeeperCluster
+metadata:
+  name: bookies
+spec:
+  image: streamnative/sn-platform-slim:3.0.0.3
+  replicas: 3
+  pod:
+    resources:
+      requests:
+        cpu: 3
+        memory: 8Gi
+    jvmOptions:
+      memoryOptions:
+      - >
+        -XX:MaxRAMPercentage=45
+        -XX:+AlwaysPreTouch
+      gcOptions:
+      - >
+        -XX:+UseZGC
+        -Djute.maxbuffer=10485760
+        -Dzookeeper.forceSync=no
+        -XX:-ZUncommit
+      gcLoggingOptions:
+      - >
+        -Xlog:gc*:file=/tmp/bk_gc.log::filecount=5,filesize=5m
+      extraOptions:
+      - >
+        -XX:CompileThreshold=2000
+        -XX:+PrintCompilation
+    securityContext:
+      runAsNonRoot: true
+  storage:
+    journal:
+      numDirsPerVolume: 1
+      numVolumes: 1
+      volumeClaimTemplate:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 40Gi
+        storageClassName: nvme-raid
+    ledger:
+      numDirsPerVolume: 1
+      numVolumes: 1
+      volumeClaimTemplate:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Gi
+        storageClassName: ssd-raid
+    reclaimPolicy: Delete
+  zkServers: zookeepers-zk:2181
+---
+apiVersion: pulsar.streamnative.io/v1alpha1
+kind: PulsarBroker
+metadata:
+  name: brokers
+spec:
+  image: streamnative/sn-platform-slim:3.0.0.3
+  logConfig:
+    level: INFO
+    format: json
+  pod:
+    resources:
+      requests:
+        cpu: 4
+        memory: 12Gi
+    jvmOptions:
+      memoryOptions:
+      - >
+        -XX:MaxRAMPercentage=45
+        -XX:+AlwaysPreTouch
+      gcOptions:
+      - >
+        -XX:+UseZGC
+        -Djute.maxbuffer=10485760
+        -Dzookeeper.forceSync=no
+        -XX:-ZUncommit
+        -XX:+UseNUMA
+      gcLoggingOptions:
+      - >
+        -Xlog:gc*:file=/tmp/br_gc.log::filecount=5,filesize=5m
+      extraOptions:
+      - >
+        -XX:CompileThreshold=2000
+        -XX:+PrintCompilation
+    securityContext:
+      runAsNonRoot: true
+  config:
+    protocolHandlers:
+      kop:
+        enabled: true        
+      mop:
+        enabled: true
+        proxyEnabled: true
+      aop:
+        enabled: true
+        proxyEnabled: true
+  replicas: 3
+  zkServers: zookeepers-zk:2181
+---
+apiVersion: pulsar.streamnative.io/v1alpha1
+kind: PulsarProxy
+metadata:
+  name: proxys
+spec:
+  apiObjects:
+    externalService:
+      managed: true
+      type: LoadBalancer
+      ports:
+      - name: kop
+        port: 9092
+        targetPort: 9092
+      - name: aop-proxy
+        port: 5673
+        targetPort: 5673
+      - name: mop-proxy
+        port: 5682
+        targetPort: 5682
+  image: streamnative/sn-platform-slim:3.0.0.3
+  pod:
+    resources:
+      requests:
+        cpu: 2
+        memory: 4Gi
+    jvmOptions:
+      memoryOptions:
+      - >
+        -XX:MaxRAMPercentage=45
+        -XX:+AlwaysPreTouch
+      gcOptions:
+      - >
+        -XX:+UseZGC
+        -Djute.maxbuffer=10485760
+        -Dzookeeper.forceSync=no
+        -XX:-ZUncommit
+      gcLoggingOptions:
+      - >
+        -Xlog:gc*:file=/tmp/px_gc.log::filecount=5,filesize=5m
+      extraOptions:
+      - >
+        -XX:CompileThreshold=2000
+        -XX:+PrintCompilation
+    securityContext:
+      runAsNonRoot: true
+  brokerAddress: brokers-broker
+  replicas: 2
+
