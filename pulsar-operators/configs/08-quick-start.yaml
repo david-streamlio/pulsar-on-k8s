@@ -23,7 +23,7 @@ kind: ZooKeeperCluster
 metadata:
   name: zookeepers
 spec:
-  image: streamnative/sn-platform-slim:3.0.0.3
+  image: streamnative/sn-platform-slim:3.0.1.5
   pod:
     resources:
       requests:
@@ -46,7 +46,6 @@ spec:
       extraOptions:
       - >
         -XX:CompileThreshold=2000
-        -XX:+PrintCompilation
     securityContext:
       runAsNonRoot: true
   persistence:
@@ -72,7 +71,7 @@ kind: BookKeeperCluster
 metadata:
   name: bookies
 spec:
-  image: streamnative/sn-platform-slim:3.0.0.3
+  image: streamnative/sn-platform-slim:3.0.1.5
   replicas: 3
   pod:
     resources:
@@ -96,7 +95,6 @@ spec:
       extraOptions:
       - >
         -XX:CompileThreshold=2000
-        -XX:+PrintCompilation
     securityContext:
       runAsNonRoot: true
   storage:
@@ -128,7 +126,7 @@ kind: PulsarBroker
 metadata:
   name: brokers
 spec:
-  image: streamnative/sn-platform-slim:3.0.0.3
+  image: streamnative/sn-platform-slim:3.0.1.5
   logConfig:
     level: INFO
     format: json
@@ -155,7 +153,6 @@ spec:
       extraOptions:
       - >
         -XX:CompileThreshold=2000
-        -XX:+PrintCompilation
     securityContext:
       runAsNonRoot: true
   config:
@@ -174,7 +171,7 @@ spec:
 apiVersion: pulsar.streamnative.io/v1alpha1
 kind: PulsarProxy
 metadata:
-  name: proxys
+  name: proxies
 spec:
   apiObjects:
     externalService:
@@ -190,7 +187,7 @@ spec:
       - name: mop-proxy
         port: 5682
         targetPort: 5682
-  image: streamnative/sn-platform-slim:3.0.0.3
+  image: streamnative/sn-platform-slim:3.0.1.5
   pod:
     resources:
       requests:
@@ -213,9 +210,7 @@ spec:
       extraOptions:
       - >
         -XX:CompileThreshold=2000
-        -XX:+PrintCompilation
     securityContext:
       runAsNonRoot: true
   brokerAddress: brokers-broker
   replicas: 2
-
