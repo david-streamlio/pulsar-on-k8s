@@ -1,7 +1,26 @@
 StreamNative Operators for Apache Pulsar
 -----------
 
-### Installing the Pulsar Operators
+### Installing the Pulsar Operators using olm subscription
+
+1️⃣ Install Operator sdk (mac)
+```
+brew install operator-sdk
+```
+
+2️⃣ Install olm to k8s cluster
+
+```
+operator-sdk olm install
+```
+
+3️⃣ Subscribe Pulsar operators
+
+```
+kubectl apply -f pulsar-operator-olm-sub.yaml
+```
+
+### Installing the Pulsar Operators using Helm
 
 1️⃣ Add the StreamNative chart repository.
 
@@ -19,7 +38,6 @@ kubectl create namespace $K8S_NAMESPACE
 
 3️⃣ Deploy the Pulsar Operators using the pulsar-operator Helm chart into the created Kubernetes namespace.
 
-
 ```bash
 export RELEASE_NAME=my-pulsar-operators
 helm install $RELEASE_NAME -n $K8S_NAMESPACE streamnative/pulsar-operator
@@ -31,8 +49,8 @@ helm install $RELEASE_NAME -n $K8S_NAMESPACE streamnative/pulsar-operator
 
 ```bash
 helm list -n $K8S_NAMESPACE
-NAME               	NAMESPACE   	REVISION	UPDATED                               	STATUS  	CHART                 	APP VERSION
-my-pulsar-operators	sn-operators	1       	2023-07-15 12:13:00.10625632 -0700 PDT	deployed	pulsar-operator-0.17.0	0.17.0     
+NAME                NAMESPACE    REVISION UPDATED                                STATUS   CHART                  APP VERSION
+my-pulsar-operators sn-operators 1        2023-07-15 12:13:00.10625632 -0700 PDT deployed pulsar-operator-0.17.0 0.17.0     
 ```
 
 Next, confirm that all the components specified in the Helm chart are deployed and in a RUNNING state.
@@ -56,7 +74,6 @@ replicaset.apps/my-pulsar-operators-bookkeeper-controller-manager-6bcc7975f9   1
 replicaset.apps/my-pulsar-operators-zookeeper-controller-manager-7b966498f9    1         1         1       116s
 ```
 
-
 2️⃣ Verify the custom resource definitions (CRDs) are installed. These CRDs are used by the Pulsar operators to deploy
 a Pulsar cluster based on higher level terms like `PulsarCluster`, and `BookKeeperCluster` instead of K8s terms such as `pod`, `service`, etc.
 
@@ -70,8 +87,9 @@ zookeeperclusters.zookeeper.streamnative.io           2023-07-15T19:12:57Z
 ```
 
 ### Deploy a Pulsar Cluster using the Operators
-The Pulsar Operators provide full lifecycle management for all the components within a Pulsar cluster. You can use it 
-to create, upgrade, and scale a cluster. This section covers how to deploy a Pulsar cluster on Kubernetes using the 
+
+The Pulsar Operators provide full lifecycle management for all the components within a Pulsar cluster. You can use it
+to create, upgrade, and scale a cluster. This section covers how to deploy a Pulsar cluster on Kubernetes using the
 Pulsar Operators by applying a single YAML file that contains the Custom Resources (CRs) of all required components, you can easily create a Pulsar cluster.
 
 1️⃣ Create a Kubernetes namespace to deploy the Pulsar cluster into
@@ -139,4 +157,5 @@ INFO  org.apache.pulsar.client.impl.ProducerImpl - [persistent://public/default/
 
 References
 ------------
-- https://docs.streamnative.io/operator/understand-pulsar-operator
+
+- <https://docs.streamnative.io/operator/understand-pulsar-operator>
