@@ -21,7 +21,7 @@ kubectl create namespace $K8S_NAMESPACE
 
 
 ```bash
-export RELEASE_NAME=my-pulsar-operators
+export RELEASE_NAME=sn-pulsar-operators
 helm install $RELEASE_NAME -n $K8S_NAMESPACE streamnative/pulsar-operator
 ```
 
