@@ -32,7 +32,7 @@ helm install $RELEASE_NAME -n $K8S_NAMESPACE streamnative/pulsar-operator
 ```bash
 helm list -n $K8S_NAMESPACE
 NAME               	NAMESPACE   	REVISION	UPDATED                               	STATUS  	CHART                 	APP VERSION
-my-pulsar-operators	sn-operators	1       	2023-07-15 12:13:00.10625632 -0700 PDT	deployed	pulsar-operator-0.17.0	0.17.0     
+sn-pulsar-operators	sn-operators	1       	2023-07-15 12:13:00.10625632 -0700 PDT	deployed	pulsar-operator-0.17.0	0.17.0     
 ```
 
 Next, confirm that all the components specified in the Helm chart are deployed and in a RUNNING state.
