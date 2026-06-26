@@ -28,3 +28,9 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### StreamNative license — never commit the real token ###
+# Only the *.template is committed; the filled-in secret and raw license keys stay local.
+pulsar-operators/configs/00-license-secret.yaml
+*sn-license*.key
+*-license.key

@@ -1,0 +1,158 @@
+# StreamNative Private Cloud — ZooKeeper-backed cluster (default metadata store).
+#
+# Mirrors the v2 quick-start manifest:
+#   https://raw.githubusercontent.com/streamnative/private-cloud/main/quick-start/pulsar-cluster.yaml
+#
+# BookKeeper storage is pinned to local storage classes:
+#   - journal -> nvme-raid   (low-latency write-ahead log)
+#   - ledger  -> ssd-raid    (bulk entry storage)
+#
+# Apply after the operator + license are installed:
+#   kubectl apply -f ./pulsar-operators/configs/01-pulsar-cluster.yaml
+#
+apiVersion: k8s.streamnative.io/v1alpha1
+kind: PulsarCoordinator
+metadata:
+  name: private-cloud
+  namespace: pulsar
+spec:
+  image: streamnative/private-cloud:3.3.2.7
+---
+apiVersion: zookeeper.streamnative.io/v1alpha1
+kind: ZooKeeperCluster
+metadata:
+  name: private-cloud
+  namespace: pulsar
+  labels:
+    k8s.streamnative.io/coordinator-name: private-cloud
+spec:
+  image: streamnative/private-cloud:3.3.2.7
+  replicas: 3
+  pod:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    securityContext:
+      runAsNonRoot: true
+  persistence:
+    data:
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: nvme-raid
+      resources:
+        requests:
+          storage: 8Gi
+    dataLog:
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: nvme-raid
+      resources:
+        requests:
+          storage: 2Gi
+    reclaimPolicy: Delete
+---
+apiVersion: bookkeeper.streamnative.io/v1alpha1
+kind: BookKeeperCluster
+metadata:
+  name: private-cloud
+  namespace: pulsar
+  labels:
+    k8s.streamnative.io/coordinator-name: private-cloud
+spec:
+  image: streamnative/private-cloud:3.3.2.7
+  replicas: 3
+  zkServers: private-cloud-zk:2181
+  pod:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    securityContext:
+      runAsNonRoot: true
+  storage:
+    journal:
+      numDirsPerVolume: 1
+      numVolumes: 1
+      volumeClaimTemplate:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: nvme-raid
+        resources:
+          requests:
+            storage: 30Gi
+    ledger:
+      numDirsPerVolume: 1
+      numVolumes: 1
+      volumeClaimTemplate:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: ssd-raid
+        resources:
+          requests:
+            storage: 100Gi
+    reclaimPolicy: Delete
+  autoRecovery:
+    replicas: 1
+    pod:
+      annotations:
+        prometheus.io/port: "8000"
+        prometheus.io/scrape: "true"
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+---
+apiVersion: pulsar.streamnative.io/v1alpha1
+kind: PulsarBroker
+metadata:
+  name: private-cloud
+  namespace: pulsar
+  labels:
+    k8s.streamnative.io/coordinator-name: private-cloud
+spec:
+  image: streamnative/private-cloud:3.3.2.7
+  replicas: 1
+  zkServers: private-cloud-zk:2181
+  config:
+    clusterName: private-cloud
+  pod:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    securityContext:
+      runAsNonRoot: true
+---
+apiVersion: pulsar.streamnative.io/v1alpha1
+kind: PulsarProxy
+metadata:
+  name: private-cloud
+  namespace: pulsar
+  labels:
+    k8s.streamnative.io/coordinator-name: private-cloud
+spec:
+  image: streamnative/private-cloud:3.3.2.7
+  replicas: 1
+  brokerAddress: private-cloud-broker
+  pod:
+    annotations:
+      prometheus.io/port: "8080"
+      prometheus.io/scrape: "true"
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+    securityContext:
+      runAsNonRoot: true
+---
+apiVersion: k8s.streamnative.io/v1alpha1
+kind: Console
+metadata:
+  name: private-cloud
+  namespace: pulsar
+  labels:
+    k8s.streamnative.io/coordinator-name: private-cloud
+spec:
+  image: streamnative/private-cloud-console:v2.3.9
+  webServiceUrl: http://private-cloud-broker:8080

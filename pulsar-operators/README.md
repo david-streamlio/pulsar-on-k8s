@@ -1,142 +1,146 @@
-StreamNative Operators for Apache Pulsar
+StreamNative Private Cloud on Kubernetes (v2)
 -----------
 
-### Installing the Pulsar Operators
+This follows the StreamNative Private Cloud **v2 quick start**:
+https://docs.streamnative.io/private-cloud/v2/quick-start/private-cloud-quickstart
 
-1️⃣ Add the StreamNative chart repository.
+A single `sn-operator` reconciles a `PulsarCoordinator` plus the component CRs
+(`ZooKeeperCluster`/`OxiaCluster`, `BookKeeperCluster`, `PulsarBroker`,
+`PulsarProxy`, `Console`). Pick **one** metadata store:
+
+| Manifest | Metadata store | Operator required |
+| --- | --- | --- |
+| `configs/01-pulsar-cluster.yaml` | ZooKeeper (default) | works on older operators |
+| `configs/02-pulsar-oxia.yaml` | Oxia (no ZooKeeper) | needs a recent `sn-operator` — see note below |
+
+### Prerequisites
+
+- Kubernetes v1.16+ with `kubectl` (±1 minor of the cluster) and `helm` v3.0.2+
+- A StreamNative Private Cloud license token
+
+### 1️⃣ Create the operators namespace
+
+```bash
+kubectl create namespace operators
+```
+
+### 2️⃣ Install the license
+
+Copy the template to the real (git-ignored) filename, replace
+`REPLACE_WITH_YOUR_LICENSE_TOKEN` with your license JWT, then apply it. The
+`cloud.streamnative.io/type: "license"` label is **required** — the operator
+auto-detects the license by that label.
+
+> ⚠️ `00-license-secret.yaml` is git-ignored so the real token is never committed;
+> only `00-license-secret.yaml.template` is tracked. Alternatively, create the
+> secret straight from a key file without a YAML at all:
+> `kubectl create secret generic sn-license -n operators --from-file=license=./sn-license.key`
+> then `kubectl label secret sn-license -n operators cloud.streamnative.io/type=license`.
+
+```bash
+cp ./pulsar-operators/configs/00-license-secret.yaml.template \
+   ./pulsar-operators/configs/00-license-secret.yaml
+# edit the copy, then:
+kubectl apply -f ./pulsar-operators/configs/00-license-secret.yaml
+```
+
+### 3️⃣ Install the operator
 
 ```bash
 helm repo add streamnative https://charts.streamnative.io
 helm repo update
+helm install sn-operator streamnative/sn-operator -n operators
 ```
 
-2️⃣ Create a Kubernetes namespace where the Pulsar Operators will be installed.
+To restrict the operator to specific namespaces instead of cluster-wide:
 
 ```bash
-export K8S_NAMESPACE=sn-operators
-kubectl create namespace $K8S_NAMESPACE
+helm install sn-operator streamnative/sn-operator -n operators \
+  --set watchNamespaces="pulsar\,pulsar-staging"
 ```
 
-3️⃣ Deploy the Pulsar Operators using the pulsar-operator Helm chart into the created Kubernetes namespace.
-
+Verify:
 
 ```bash
-export RELEASE_NAME=sn-pulsar-operators
-helm install $RELEASE_NAME -n $K8S_NAMESPACE streamnative/pulsar-operator
+kubectl get all -n operators
 ```
 
-### Verify the Installation of the Pulsar Operators
-
-1️⃣ Verify that the Pulsar Operators are installed successfully, by checking that the helm release exists in the specified K8s namespace.
+### 4️⃣ Create the pulsar namespace
 
 ```bash
-helm list -n $K8S_NAMESPACE
-NAME               	NAMESPACE   	REVISION	UPDATED                               	STATUS  	CHART                 	APP VERSION
-sn-pulsar-operators	sn-operators	1       	2023-07-15 12:13:00.10625632 -0700 PDT	deployed	pulsar-operator-0.17.0	0.17.0     
+kubectl create ns pulsar
 ```
 
-Next, confirm that all the components specified in the Helm chart are deployed and in a RUNNING state.
+### 5️⃣ Deploy the Pulsar cluster
+
+**Option A — ZooKeeper (default):**
 
 ```bash
-kubectl get all -n $K8S_NAMESPACE
-
-NAME                                                                  READY   STATUS    RESTARTS   AGE
-pod/my-pulsar-operators-pulsar-controller-manager-67cb694d79-696g2    1/1     Running   0          116s
-pod/my-pulsar-operators-bookkeeper-controller-manager-6bcc7975rsrll   1/1     Running   0          116s
-pod/my-pulsar-operators-zookeeper-controller-manager-7b966498ffbpht   1/1     Running   0          116s
-
-NAME                                                                READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/my-pulsar-operators-pulsar-controller-manager       1/1     1            1           117s
-deployment.apps/my-pulsar-operators-bookkeeper-controller-manager   1/1     1            1           117s
-deployment.apps/my-pulsar-operators-zookeeper-controller-manager    1/1     1            1           117s
-
-NAME                                                                           DESIRED   CURRENT   READY   AGE
-replicaset.apps/my-pulsar-operators-pulsar-controller-manager-67cb694d79       1         1         1       116s
-replicaset.apps/my-pulsar-operators-bookkeeper-controller-manager-6bcc7975f9   1         1         1       116s
-replicaset.apps/my-pulsar-operators-zookeeper-controller-manager-7b966498f9    1         1         1       116s
+kubectl apply -f ./pulsar-operators/configs/01-pulsar-cluster.yaml
 ```
 
-
-2️⃣ Verify the custom resource definitions (CRDs) are installed. These CRDs are used by the Pulsar operators to deploy
-a Pulsar cluster based on higher level terms like `PulsarCluster`, and `BookKeeperCluster` instead of K8s terms such as `pod`, `service`, etc.
+**Option B — Oxia (no ZooKeeper):**
 
 ```bash
-kubectl get crds | grep streamnative
-
-bookkeeperclusters.bookkeeper.streamnative.io         2023-07-15T19:12:56Z
-pulsarbrokers.pulsar.streamnative.io                  2023-07-15T19:12:56Z
-pulsarproxies.pulsar.streamnative.io                  2023-07-15T19:12:57Z
-zookeeperclusters.zookeeper.streamnative.io           2023-07-15T19:12:57Z
+kubectl apply -f ./pulsar-operators/configs/02-pulsar-oxia.yaml
 ```
 
-### Deploy a Pulsar Cluster using the Operators
-The Pulsar Operators provide full lifecycle management for all the components within a Pulsar cluster. You can use it 
-to create, upgrade, and scale a cluster. This section covers how to deploy a Pulsar cluster on Kubernetes using the 
-Pulsar Operators by applying a single YAML file that contains the Custom Resources (CRs) of all required components, you can easily create a Pulsar cluster.
-
-1️⃣ Create a Kubernetes namespace to deploy the Pulsar cluster into
+Watch it come up:
 
 ```bash
-export PULSAR_K8S_NAMESPACE=pulsar
-kubectl create namespace $PULSAR_K8S_NAMESPACE
+kubectl get pods -n pulsar -w
 ```
 
-2️⃣ Install Pulsar
+### Storage classes (this repo's lab)
+
+The BookKeeper (and ZooKeeper/Oxia) volumes in these manifests are pinned to the
+local storage classes used in this cluster:
+
+| Component | Volume | StorageClass | Size |
+| --- | --- | --- | --- |
+| BookKeeper | journal | `nvme-raid` | 30Gi |
+| BookKeeper | ledger | `ssd-raid` | 100Gi |
+| ZooKeeper | data / dataLog | `nvme-raid` | 8Gi / 2Gi |
+| Oxia | server | `nvme-raid` | 4Gi |
+
+Adjust `storageClassName` / `storage` requests for your environment.
+
+### Image versions
+
+`01-pulsar-cluster.yaml` pins `streamnative/private-cloud:3.3.2.7` (matching the
+upstream ZK quick-start); `02-pulsar-oxia.yaml` pins `streamnative/private-cloud:4.0.4.1`.
+Keep these consistent with the `sn-operator` version you install.
+
+> ⚠️ **Operator compatibility for the Oxia path.** `02-pulsar-oxia.yaml` uses
+> `StorageCatalog`, the 5-namespace `OxiaNamespace` layout, and
+> `PulsarBroker.spec.config.useStorageCatalog`. These require a recent
+> `sn-operator` (chart ≥ `v0.18.x`). Older operators (e.g. chart `v0.2.5` /
+> app `v0.8.5`) will reject these fields — `helm upgrade sn-operator
+> streamnative/sn-operator -n operators` first. The ZooKeeper manifest
+> (`01-pulsar-cluster.yaml`) applies cleanly on older operators.
+
+### Post-installation
+
+Open a client shell on the toolset pod:
 
 ```bash
-kubectl apply -f ./pulsar-operators/configs/00-quick-start.yaml --wait --namespace $PULSAR_K8S_NAMESPACE
-
-zookeepercluster.zookeeper.streamnative.io/zookeepers created
-bookkeepercluster.bookkeeper.streamnative.io/bookies created
-pulsarbroker.pulsar.streamnative.io/brokers created
+kubectl exec -it private-cloud-toolset-0 -n pulsar -- bash
 ```
 
-3️⃣ Verify that all components of the Pulsar cluster are up and running.
+Port-forward the console:
 
 ```bash
-kubectl get all -n $PULSAR_K8S_NAMESPACE
-
-NAME                             READY   STATUS    RESTARTS   AGE
-pod/zookeepers-zk-0              1/1     Running   0          4m26s
-pod/zookeepers-zk-1              1/1     Running   0          4m26s
-pod/zookeepers-zk-2              1/1     Running   0          4m26s
-pod/brokers-broker-1             1/1     Running   0          3m23s
-pod/brokers-broker-0             1/1     Running   0          3m23s
-pod/bookies-bk-0                 1/1     Running   0          3m20s
-pod/bookies-bk-1                 1/1     Running   0          3m20s
-pod/bookies-bk-2                 1/1     Running   0          3m20s
-pod/bookies-bk-auto-recovery-0   1/1     Running   0          2m21s
-
-NAME                                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                                        AGE
-service/zookeepers-zk                       ClusterIP   10.152.183.159   <none>        2181/TCP,8000/TCP,9990/TCP                     4m27s
-service/zookeepers-zk-headless              ClusterIP   None             <none>        2181/TCP,2888/TCP,3888/TCP,8000/TCP,9990/TCP   4m27s
-service/brokers-broker                      ClusterIP   10.152.183.217   <none>        6650/TCP,8080/TCP                              4m26s
-service/brokers-broker-headless             ClusterIP   None             <none>        6650/TCP,8080/TCP                              4m26s
-service/bookies-bk-auto-recovery-headless   ClusterIP   None             <none>        3181/TCP,8000/TCP                              3m20s
-service/bookies-bk                          ClusterIP   10.152.183.228   <none>        3181/TCP,8000/TCP                              3m20s
-service/bookies-bk-headless                 ClusterIP   None             <none>        3181/TCP,8000/TCP                              3m20s
-
-NAME                                        READY   AGE
-statefulset.apps/zookeepers-zk              3/3     4m27s
-statefulset.apps/brokers-broker             2/2     3m23s
-statefulset.apps/bookies-bk                 3/3     3m20s
-statefulset.apps/bookies-bk-auto-recovery   1/1     3m20s
+kubectl port-forward private-cloud-console-0 9527:9527 -n pulsar
 ```
 
-4 Run a smoke test to confirm that the Pulsar cluster is functional
+### Cleanup
 
 ```bash
-kubectl exec -it -n pulsar pod/brokers-broker-0 /pulsar/bin/pulsar-perf produce persistent://public/default/test
-
-INFO  org.apache.pulsar.client.impl.ProducerImpl - [persistent://public/default/test] [brokers-1-0] Created producer on cnx [id: 0x8aeb8192, L:/10.1.192.100:56566 - R:brokers-broker-0.brokers-broker-headless.pulsar.svc.cluster.local/10.1.192.100:6650]
-2023-07-15T21:02:23,950+0000 [pulsar-perf-producer-exec-1-1] INFO  org.apache.pulsar.testclient.PerformanceProducer - Created 1 producers
-2023-07-15T21:02:24,005+0000 [pulsar-client-io-2-1] INFO  com.scurrilous.circe.checksum.Crc32cIntChecksum - SSE4.2 CRC32C provider initialized
-2023-07-15T21:02:32,316+0000 [main] INFO  org.apache.pulsar.testclient.PerformanceProducer - Throughput produced:     831 msg ---     83.1 msg/s ---      0.6 Mbit/s  --- failure      0.0 msg/s --- Latency: mean:   6.960 ms - med:   6.772 - 95pct:   9.490 - 99pct:  11.210 - 99.9pct:  23.170 - 99.99pct:  29.036 - Max:  29.036
-2023-07-15T21:02:42,358+0000 [main] INFO  org.apache.pulsar.testclient.PerformanceProducer - Throughput produced:    1838 msg ---    100.0 msg/s ---      0.8 Mbit/s  --- failure      0.0 msg/s --- Latency: mean:   7.066 ms - med:   6.124 - 95pct:   8.454 - 99pct:  42.647 - 99.9pct:  94.420 - 99.99pct:  95.330 - Max:  95.330
-2023-07-15T21:02:52,392+0000 [main] INFO  org.apache.pulsar.testclient.PerformanceProducer - Throughput produced:    2841 msg ---    100.0 msg/s ---      0.8 Mbit/s  --- failure      0.0 msg/s --- Latency: mean:   6.203 ms - med:   5.960 - 95pct:   7.693 - 99pct:   9.641 - 99.9pct:  43.079 - 99.99pct:  48.938 - Max:  48.938
-2023-07-15T21:03:02,453+0000 [main] INFO  org.apache.pulsar.testclient.PerformanceProducer - Throughput produced:    3845 msg ---    100.0 msg/s ---      0.8 Mbit/s  --- failure      0.0 msg/s --- Latency: mean:   9.487 ms - med:   5.975 - 95pct:   7.911 - 99pct: 163.274 - 99.9pct: 250.903 - 99.99pct: 259.981 - Max: 259.981
+kubectl delete -f ./pulsar-operators/configs/01-pulsar-cluster.yaml   # or 02-pulsar-oxia.yaml
+kubectl delete pvc --all -n pulsar                                     # removes data volumes
+helm uninstall sn-operator -n operators
 ```
 
 References
 ------------
-- https://docs.streamnative.io/operator/understand-pulsar-operator
+- https://docs.streamnative.io/private-cloud/v2/quick-start/private-cloud-quickstart
