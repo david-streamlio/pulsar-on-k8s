@@ -5,12 +5,15 @@
 #
 # Local-lab customizations:
 #   - image: streamnative/private-cloud:4.2.1.4 (latest)
-#   - broker replicas: 2
+#   - broker replicas: 2, with an operator-managed HPA (autoScalingPolicy)
+#     scaling on CPU (60% util) between 2 and 6 replicas.
 #   - resources: broker / bookie / oxia each request 1 core + 4Gi
 #   - BookKeeper storage on local classes: journal -> nvme-raid, ledger -> ssd-raid (200Gi)
 #   - Oxia server data -> nvme-raid
-#   - podAntiAffinity (hostname) on broker / bookie / oxia so same-type pods
-#     spread one-per-node across the 3 k8s nodes.
+#   - required podAntiAffinity (hostname) on bookie / oxia so same-type pods
+#     spread one-per-node across the 3 k8s nodes (also avoids local-PVC pinning issues).
+#   - broker uses topologySpreadConstraints (maxSkew 1, ScheduleAnyway) instead:
+#     one broker per node first, then HPA adds extra replicas onto existing nodes.
 #
 # Apply after the operator + license are installed (instead of 01-pulsar-cluster.yaml):
 #   kubectl apply -f ./pulsar-operators/configs/02-pulsar-oxia.yaml
@@ -225,6 +228,19 @@ metadata:
 spec:
   image: streamnative/private-cloud:4.2.1.4
   replicas: 2
+  # Operator-managed HPA. Brokers spread one-per-node first (topologySpreadConstraints
+  # in pod.spec below), then HPA can add more onto existing nodes up to maxReplicas
+  # (6 = up to 2 brokers per node across 3 nodes).
+  autoScalingPolicy:
+    minReplicas: 2
+    maxReplicas: 6
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 60
   bkMetadataServiceUri: metadata-store:oxia://private-cloud-oxia.pulsar.svc.cluster.local:6648/bookkeeper
   # Use the oxia namespace address for broker metadata
   metadataStoreUrl: oxia://private-cloud-oxia.pulsar.svc.cluster.local:6648/broker
@@ -257,14 +273,18 @@ spec:
       requests:
         cpu: "1"
         memory: 4Gi
-    affinity:
-      podAntiAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                cloud.streamnative.io/cluster: private-cloud
-                cloud.streamnative.io/component: broker
-            topologyKey: kubernetes.io/hostname
+    # Brokers are stateless, so they don't need hard one-per-node placement.
+    # topologySpreadConstraints fills one broker per node first, then balances
+    # additional replicas (HPA scale-up beyond 3) evenly onto existing nodes
+    # (maxSkew 1 + ScheduleAnyway). oxia/bookie keep required anti-affinity.
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            cloud.streamnative.io/cluster: private-cloud
+            cloud.streamnative.io/component: broker
     securityContext:
       runAsNonRoot: true
 ---
