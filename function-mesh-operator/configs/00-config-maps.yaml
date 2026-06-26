@@ -4,8 +4,8 @@ kind: ConfigMap
 metadata:
   name: pulsar
 data:
-  webServiceURL: http://<BROKER-URL>:8080
-  brokerServiceURL: pulsar://<BROKER-URL>:6650
+  webServiceURL: http://private-cloud-proxy.pulsar.svc.cluster.local:8080
+  brokerServiceURL: pulsar://private-cloud-proxy.pulsar.svc.cluster.local:6650
 ---
 apiVersion: v1
 kind: Secret
