@@ -175,6 +175,36 @@ snctl context update-external private-cloud --token "$(cat broker-admin.token)"
 snctl pulsar admin tenants list      # works with token; 401 without
 ```
 
+### TLS (encryption in transit)
+
+`03-pulsar-tls.yaml` provisions the certs with **cert-manager** (self-signed CA →
+CA issuer → server cert with broker/proxy SANs + the LB IP). Install cert-manager
+first (`kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.2/cert-manager.yaml`),
+then `kubectl apply -f ./pulsar-operators/configs/03-pulsar-tls.yaml`.
+
+The **broker** uses the operator-native `spec.tls` (`certSecretName: pulsar-server-tls`),
+which mounts the cert at `/etc/tls/pulsar-broker/` and enables both the web TLS port
+(8443) and the binary TLS listener (`pulsar+ssl://…:6651` via `advertisedListeners`).
+Do **not** also set `PULSAR_PREFIX_brokerServicePortTls` — it double-binds 6651 and
+crashloops the broker. Verify (from a broker pod):
+
+```bash
+# binary TLS
+./bin/pulsar-client --url pulsar+ssl://localhost:6651 \
+  --auth-plugin org.apache.pulsar.client.impl.auth.AuthenticationToken \
+  --auth-params "token:$(cat broker-admin.token)" \
+  --tlsTrustCertsFilePath /etc/tls/pulsar-broker/ca.crt \
+  produce public/default/t -m hi -n 1
+# admin/web TLS
+curl --cacert /etc/tls/pulsar-broker/ca.crt -H "Authorization: Bearer <token>" \
+  https://localhost:8443/admin/v2/clusters
+```
+
+> **Known limitation (follow-up):** proxy / external **LoadBalancer** TLS is not
+> enabled. In operator v0.18.14 the proxy Service/LoadBalancer doesn't publish the
+> TLS ports (6651/8443) — neither `certSecretName` nor `config.custom` gets them
+> exposed — so external clients still use plaintext + token via the LB.
+
 ### Cleanup
 
 ```bash

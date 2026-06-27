@@ -241,6 +241,14 @@ spec:
           target:
             type: Utilization
             averageUtilization: 60
+  # TLS (encryption in transit). The operator mounts the cert-manager secret at
+  # /etc/tls/pulsar-broker/ and configures BOTH the web TLS port (8443) and the
+  # binary TLS listener (cluster_tls:pulsar+ssl://...:6651 via advertisedListeners
+  # /bindAddresses). Do NOT also set brokerServicePortTls — it double-binds 6651.
+  tls:
+    enabled: true
+    certSecretName: pulsar-server-tls
+    trustCertsEnabled: true
   bkMetadataServiceUri: metadata-store:oxia://private-cloud-oxia.pulsar.svc.cluster.local:6648/bookkeeper
   # Use the oxia namespace address for broker metadata
   metadataStoreUrl: oxia://private-cloud-oxia.pulsar.svc.cluster.local:6648/broker
@@ -342,6 +350,10 @@ spec:
   image: streamnative/private-cloud:4.2.1.4
   replicas: 1
   brokerAddress: private-cloud-broker
+  # NOTE: proxy/external (LoadBalancer) TLS is NOT enabled. In operator v0.18.14
+  # neither `certSecretName` nor config.custom TLS gets the proxy Service/LB to
+  # publish the TLS ports (6651/8443), so external clients use plaintext+token.
+  # Broker TLS (below, spec.tls) works for direct/internal connections. Follow-up.
   config:
     # JWT/token auth: proxy authenticates clients and forwards their identity
     # to the broker (authenticateOriginalAuthData + forwardAuthorizationCredentials).
