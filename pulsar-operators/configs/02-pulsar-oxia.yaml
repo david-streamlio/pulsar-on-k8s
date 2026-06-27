@@ -241,6 +241,14 @@ spec:
           target:
             type: Utilization
             averageUtilization: 60
+  # TLS (encryption in transit). The operator mounts the cert-manager secret at
+  # /etc/tls/pulsar-broker/ and configures BOTH the web TLS port (8443) and the
+  # binary TLS listener (cluster_tls:pulsar+ssl://...:6651 via advertisedListeners
+  # /bindAddresses). Do NOT also set brokerServicePortTls — it double-binds 6651.
+  tls:
+    enabled: true
+    certSecretName: pulsar-server-tls
+    trustCertsEnabled: true
   bkMetadataServiceUri: metadata-store:oxia://private-cloud-oxia.pulsar.svc.cluster.local:6648/bookkeeper
   # Use the oxia namespace address for broker metadata
   metadataStoreUrl: oxia://private-cloud-oxia.pulsar.svc.cluster.local:6648/broker
@@ -249,6 +257,11 @@ spec:
   config:
     clusterName: private-cloud
     useStorageCatalog: true
+    # JWT/token auth: the operator wires the broker's internal client identity
+    # (brokerClientAuthenticationParameters) from the broker-admin token secret.
+    clientAuth:
+      jwt:
+        secret: broker-admin
     custom:
       PULSAR_PREFIX_metadataStoreUrl: oxia://private-cloud-oxia.pulsar.svc.cluster.local:6648/broker
       PULSAR_PREFIX_configurationMetadataStoreUrl: oxia://private-cloud-oxia.pulsar.svc.cluster.local:6648/broker
@@ -261,6 +274,20 @@ spec:
       PULSAR_PREFIX_schemaRegistryUrl: oxia://private-cloud-oxia.pulsar.svc.cluster.local:6648/kafka-schema
       PULSAR_PREFIX_schemaRegistryStorageClassName: io.streamnative.pulsar.schema.OxiaSchemaStorageFactory
       PULSAR_PREFIX_topicPoliciesServiceClassName: io.streamnative.pulsar.OxiaTopicPoliciesService
+      # --- JWT/token authentication (per StreamNative private-cloud JWT auth doc).
+      # Keys are PULSAR_PREFIX_-prefixed because this cluster sets
+      # enable-config-prefix=false (operator passes config.custom through verbatim).
+      PULSAR_PREFIX_authenticationEnabled: "true"
+      PULSAR_PREFIX_authenticateOriginalAuthData: "true"
+      PULSAR_PREFIX_authenticationProviders: org.apache.pulsar.broker.authentication.AuthenticationProviderToken
+      PULSAR_PREFIX_authorizationEnabled: "true"
+      PULSAR_PREFIX_authorizationProvider: org.apache.pulsar.broker.authorization.PulsarAuthorizationProvider
+      PULSAR_PREFIX_superUserRoles: broker-admin,proxy-admin
+      # proxy-admin is a proxy role, so the broker trusts it to forward the
+      # original client principal (required for client auth via the proxy).
+      PULSAR_PREFIX_proxyRoles: proxy-admin
+      PULSAR_PREFIX_brokerClientAuthenticationPlugin: org.apache.pulsar.client.impl.auth.AuthenticationToken
+      PULSAR_PREFIX_tokenPublicKey: file:///mnt/secrets/my-public.key
     function:
       enabled: false
       mesh:
@@ -273,6 +300,16 @@ spec:
       requests:
         cpu: "1"
         memory: 4Gi
+    # Mount the JWT public key for token validation.
+    secretRefs:
+      - mountPath: /mnt/secrets
+        secretName: token-public-key
+    vars:
+      - name: brokerClientAuthenticationParameters
+        valueFrom:
+          secretKeyRef:
+            name: broker-admin
+            key: token
     # Brokers are stateless, so they don't need hard one-per-node placement.
     # topologySpreadConstraints fills one broker per node first, then balances
     # additional replicas (HPA scale-up beyond 3) evenly onto existing nodes
@@ -313,6 +350,24 @@ spec:
   image: streamnative/private-cloud:4.2.1.4
   replicas: 1
   brokerAddress: private-cloud-broker
+  # NOTE: proxy/external (LoadBalancer) TLS is NOT enabled. In operator v0.18.14
+  # neither `certSecretName` nor config.custom TLS gets the proxy Service/LB to
+  # publish the TLS ports (6651/8443), so external clients use plaintext+token.
+  # Broker TLS (below, spec.tls) works for direct/internal connections. Follow-up.
+  config:
+    # JWT/token auth: proxy authenticates clients and forwards their identity
+    # to the broker (authenticateOriginalAuthData + forwardAuthorizationCredentials).
+    clientAuth:
+      jwt:
+        secret: proxy-admin
+    custom:
+      PULSAR_PREFIX_authenticationEnabled: "true"
+      PULSAR_PREFIX_authenticateOriginalAuthData: "true"
+      PULSAR_PREFIX_forwardAuthorizationCredentials: "true"
+      PULSAR_PREFIX_authenticationProviders: org.apache.pulsar.broker.authentication.AuthenticationProviderToken
+      PULSAR_PREFIX_brokerClientAuthenticationPlugin: org.apache.pulsar.client.impl.auth.AuthenticationToken
+      PULSAR_PREFIX_superUserRoles: proxy-admin
+      PULSAR_PREFIX_tokenPublicKey: file:///mnt/secrets/my-public.key
   pod:
     annotations:
       prometheus.io/port: "8080"
@@ -321,5 +376,14 @@ spec:
       requests:
         cpu: 200m
         memory: 512Mi
+    secretRefs:
+      - mountPath: /mnt/secrets
+        secretName: token-public-key
+    vars:
+      - name: brokerClientAuthenticationParameters
+        valueFrom:
+          secretKeyRef:
+            name: proxy-admin
+            key: token
     securityContext:
       runAsNonRoot: true

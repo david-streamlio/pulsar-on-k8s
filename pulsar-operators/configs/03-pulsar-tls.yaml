@@ -1,0 +1,65 @@
+# cert-manager TLS for the private-cloud Pulsar cluster.
+# Self-signed root CA -> CA issuer -> server cert (broker + proxy SANs + LB IP).
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: pulsar-selfsigned
+  namespace: pulsar
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pulsar-ca
+  namespace: pulsar
+spec:
+  isCA: true
+  commonName: private-cloud-pulsar-ca
+  secretName: pulsar-ca-tls
+  duration: 87600h    # 10y
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  issuerRef:
+    name: pulsar-selfsigned
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: pulsar-ca-issuer
+  namespace: pulsar
+spec:
+  ca:
+    secretName: pulsar-ca-tls
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pulsar-server-tls
+  namespace: pulsar
+spec:
+  secretName: pulsar-server-tls
+  duration: 8760h     # 1y
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  issuerRef:
+    name: pulsar-ca-issuer
+    kind: Issuer
+  dnsNames:
+    - private-cloud-broker
+    - private-cloud-broker.pulsar.svc
+    - private-cloud-broker.pulsar.svc.cluster.local
+    - private-cloud-broker-headless.pulsar.svc.cluster.local
+    - "*.private-cloud-broker-headless.pulsar.svc.cluster.local"
+    - private-cloud-proxy
+    - private-cloud-proxy.pulsar.svc
+    - private-cloud-proxy.pulsar.svc.cluster.local
+    - private-cloud-proxy-headless.pulsar.svc.cluster.local
+    - "*.private-cloud-proxy-headless.pulsar.svc.cluster.local"
+    - localhost
+  ipAddresses:
+    - 192.168.0.200
+    - 127.0.0.1

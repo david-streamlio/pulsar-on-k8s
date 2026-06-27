@@ -133,6 +133,78 @@ Port-forward the console:
 kubectl port-forward private-cloud-console-0 9527:9527 -n pulsar
 ```
 
+### JWT authentication (token auth)
+
+`02-pulsar-oxia.yaml` is wired for JWT/token authentication
+(`AuthenticationProviderToken`) per the
+[StreamNative private-cloud JWT auth guide](https://docs.streamnative.io/private-cloud/v2/configure-private-cloud/security/authentication/private-cloud-jwt-auth).
+The manifest references four secrets that you generate locally (keys/tokens are
+**never** committed — see `.gitignore`):
+
+```bash
+# 1) RS256 key pair (snctl == pulsarctl token tooling)
+snctl pulsar admin token create-key-pair \
+  --output-private-key token-private.key --output-public-key token-public.key
+
+# 2) Mint subject tokens (stdout is on stderr; capture both)
+for s in broker-admin proxy-admin client; do
+  snctl pulsar admin token create --private-key-file token-private.key --subject "$s" 2>&1 \
+    | grep -oE 'eyJ[A-Za-z0-9_.-]+' > "$s.token"
+done
+
+# 3) Create the secrets the manifest expects (pulsar namespace)
+kubectl create secret generic token-public-key -n pulsar --from-file=my-public.key=token-public.key
+kubectl create secret generic broker-admin -n pulsar --from-file=token=broker-admin.token
+kubectl create secret generic proxy-admin  -n pulsar --from-file=token=proxy-admin.token
+kubectl create secret generic client       -n pulsar --from-file=token=client.token
+```
+
+Key points in the manifest:
+
+- Keys live under `config.custom` as `PULSAR_PREFIX_*` (this cluster sets
+  `enable-config-prefix: false`, so custom keys pass through verbatim).
+- `superUserRoles: broker-admin,proxy-admin`; **`proxyRoles: proxy-admin`** is
+  required so the broker trusts the proxy to forward the original client identity.
+- `config.clientAuth.jwt.secret` + `pod.vars` provide each component's own client token;
+  `pod.secretRefs` mounts the public key at `/mnt/secrets/my-public.key`.
+
+Point `snctl` at the cluster with a superuser token:
+
+```bash
+snctl context update-external private-cloud --token "$(cat broker-admin.token)"
+snctl pulsar admin tenants list      # works with token; 401 without
+```
+
+### TLS (encryption in transit)
+
+`03-pulsar-tls.yaml` provisions the certs with **cert-manager** (self-signed CA →
+CA issuer → server cert with broker/proxy SANs + the LB IP). Install cert-manager
+first (`kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.2/cert-manager.yaml`),
+then `kubectl apply -f ./pulsar-operators/configs/03-pulsar-tls.yaml`.
+
+The **broker** uses the operator-native `spec.tls` (`certSecretName: pulsar-server-tls`),
+which mounts the cert at `/etc/tls/pulsar-broker/` and enables both the web TLS port
+(8443) and the binary TLS listener (`pulsar+ssl://…:6651` via `advertisedListeners`).
+Do **not** also set `PULSAR_PREFIX_brokerServicePortTls` — it double-binds 6651 and
+crashloops the broker. Verify (from a broker pod):
+
+```bash
+# binary TLS
+./bin/pulsar-client --url pulsar+ssl://localhost:6651 \
+  --auth-plugin org.apache.pulsar.client.impl.auth.AuthenticationToken \
+  --auth-params "token:$(cat broker-admin.token)" \
+  --tlsTrustCertsFilePath /etc/tls/pulsar-broker/ca.crt \
+  produce public/default/t -m hi -n 1
+# admin/web TLS
+curl --cacert /etc/tls/pulsar-broker/ca.crt -H "Authorization: Bearer <token>" \
+  https://localhost:8443/admin/v2/clusters
+```
+
+> **Known limitation (follow-up):** proxy / external **LoadBalancer** TLS is not
+> enabled. In operator v0.18.14 the proxy Service/LoadBalancer doesn't publish the
+> TLS ports (6651/8443) — neither `certSecretName` nor `config.custom` gets them
+> exposed — so external clients still use plaintext + token via the LB.
+
 ### Cleanup
 
 ```bash

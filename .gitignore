@@ -34,3 +34,9 @@ bin/
 pulsar-operators/configs/00-license-secret.yaml
 *sn-license*.key
 *-license.key
+
+### Pulsar JWT auth — never commit the signing key or tokens ###
+# Generated locally with snctl; recreate the k8s secrets from these (see README).
+token-private.key
+token-public.key
+*.token
