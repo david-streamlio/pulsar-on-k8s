@@ -8,10 +8,18 @@ A single `sn-operator` reconciles a `PulsarCoordinator` plus the component CRs
 (`ZooKeeperCluster`/`OxiaCluster`, `BookKeeperCluster`, `PulsarBroker`,
 `PulsarProxy`, `Console`). Pick **one** metadata store:
 
-| Manifest | Metadata store | Operator required |
+| Manifest | Metadata store | Notes |
 | --- | --- | --- |
-| `configs/01-pulsar-cluster.yaml` | ZooKeeper (default) | works on older operators |
-| `configs/02-pulsar-oxia.yaml` | Oxia (no ZooKeeper) | needs a recent `sn-operator` — see note below |
+| `configs/01-pulsar-cluster.yaml` | ZooKeeper | minimal/basic ZK (no auth/TLS) |
+| `configs/02-pulsar-oxia.yaml` | Oxia (no ZooKeeper) | full-featured (JWT auth, TLS, HPA); **no package management** (see below) |
+| `configs/03-pulsar-zookeeper.yaml` | ZooKeeper | full-featured **+ package management / jar functions** |
+
+> **Oxia vs ZooKeeper — package management:** Oxia-backed v2 clusters **do not support
+> function package management** (the BookKeeper package store needs a ZooKeeper
+> DistributedLog namespace; enabling it crashes the broker on Oxia). If you want to
+> upload **jar/nar packages** and run **Function-Mesh jar functions** (no MinIO, no
+> per-function images), use the **ZooKeeper** manifest (`03-pulsar-zookeeper.yaml`).
+> Oxia remains the choice for a ZK-free architecture where packages aren't needed.
 
 ### One-command deploy
 
