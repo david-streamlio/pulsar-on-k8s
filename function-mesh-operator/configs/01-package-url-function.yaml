@@ -35,6 +35,11 @@ spec:
   forwardSourceMessageProperty: true
   autoAck: true
   replicas: 1
+  # earliest so the function reads from the start once subscribed. IMPORTANT: let the
+  # function create its consumer FIRST (it sets the topic's STRING schema). If you
+  # `pulsar-client produce` to the input topic before the function subscribes, the topic
+  # gets a BYTES schema and the function fails with IncompatibleSchemaException.
+  subscriptionPosition: earliest
   # Runner image MUST match the cluster's Pulsar version (private-cloud:4.2.1.4 -> Pulsar 4.2.1.4).
   # A mismatched runner (e.g. 2.9.x) goes Ready but never subscribes.
   image: streamnative/pulsar-functions-java-runner:4.2.1.4
