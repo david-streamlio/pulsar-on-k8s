@@ -249,6 +249,31 @@ MCP endpoint : http://<snmcp-LB-ip>:9090/mcp
 Auth header  : Authorization: Bearer <pulsar token>
 ```
 
+### Functions: `functions create --jar` via Orca (Function Mesh Worker Service)
+
+`03-pulsar-zookeeper.yaml` enables **Orca / FMWS** on the broker — the bundled
+`mesh-worker-service.nar` turns the functions-worker into a translator, so the familiar
+CLI workflow creates **Function Mesh `Function` CRDs** (jar in package management, stock
+runner image, no hand-written CRDs). The operator's `function.mesh` field alone doesn't
+wire the NAR — it's injected via `config.function.customWorkerConfig` (`functionsWorkerServiceNarPackage`
++ `functionsWorkerServiceCustomConfigs` with `functionRunnerImages`).
+
+```bash
+# (token required since auth is on; the broker's bundled examples jar):
+kubectl exec -n pulsar -c pulsar-broker private-cloud-broker-0 -- \
+  ./bin/pulsar-admin --auth-plugin org.apache.pulsar.client.impl.auth.AuthenticationToken \
+  --auth-params "token:$ADMIN" functions create \
+  --tenant public --namespace default --name myfn \
+  --className org.apache.pulsar.functions.api.examples.ExclamationFunction \
+  --inputs persistent://public/default/in --output persistent://public/default/out \
+  --jar /pulsar/examples/api-examples.jar
+# -> a `Function` CRD appears (kubectl get function -n pulsar); FMWS auto-propagates the
+#    caller's token into the function and uses the configured runner image.
+```
+
+For full control you can still apply a `Function` CRD directly — see
+`function-mesh-operator/configs/01-package-url-function.yaml` (with its gotchas).
+
 ### Cleanup
 
 ```bash
