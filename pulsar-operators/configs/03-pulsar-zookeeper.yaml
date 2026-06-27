@@ -142,11 +142,25 @@ spec:
     trustCertsEnabled: true
   config:
     clusterName: private-cloud
-    # Functions run via the Function Mesh operator (CRDs), not the broker's built-in
-    # KubernetesRuntime worker — so the worker stays off. Package management (below)
-    # still serves jar downloads for Function-Mesh `function://` package URLs.
+    # Orca / Function Mesh Worker Service (FMWS): the bundled mesh-worker-service NAR
+    # turns the broker's functions-worker into a translator — `pulsar-admin/snctl
+    # functions create --jar` becomes a Function Mesh `Function` CRD (no hand-written
+    # CRDs, no per-function image build; jar lives in package management). The operator's
+    # `function.mesh` field alone does NOT wire the NAR — inject it via customWorkerConfig.
+    # FMWS auto-propagates the caller's auth token into each function it creates.
     function:
-      enabled: false
+      enabled: true
+      customWorkerConfig: |
+        functionsWorkerServiceNarPackage: /pulsar/lib/mesh-worker-service.nar
+        functionsWorkerServiceCustomConfigs:
+          uploadEnabled: true
+          functionEnabled: true
+          sinkEnabled: true
+          sourceEnabled: true
+          functionRunnerImages:
+            JAVA: streamnative/pulsar-functions-java-runner:4.2.1.4
+            PYTHON: streamnative/pulsar-functions-python-runner:4.2.1.4
+            GO: streamnative/pulsar-functions-go-runner:4.2.1.4
     # JWT/token auth internal client identity.
     clientAuth:
       jwt:
