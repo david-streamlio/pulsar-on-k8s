@@ -1,0 +1,63 @@
+# Function Mesh function that runs a JAR pulled from Pulsar package management
+# (a `function://` URL) — no docker image build, no MinIO. Requires the ZooKeeper
+# cluster (03-pulsar-zookeeper.yaml) since Oxia doesn't support package management.
+#
+# Prereqs (run once):
+#   1) Upload the jar as a package (any jar; here the broker's bundled examples):
+#        kubectl exec -n pulsar -c pulsar-broker private-cloud-broker-0 -- \
+#          ./bin/pulsar-admin --auth-plugin org.apache.pulsar.client.impl.auth.AuthenticationToken \
+#          --auth-params "token:$ADMIN" packages upload \
+#          function://public/default/exclaim-pkg@v1 --path /pulsar/examples/api-examples.jar
+#   2) Grant the function's role ALL needed actions at once (grant is a SET, not add):
+#        snctl pulsar admin namespaces grant-permission public/default \
+#          --role client --actions produce --actions consume --actions packages
+#   3) Fill in the client token below (from `client.token`; keep it out of git).
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pulsar-fn
+  namespace: pulsar
+data:
+  # NOTE the TRAILING DOT on the host — marks the name absolute so the function pod's
+  # resolver doesn't append the search domain (…svc.cluster.local.pulsar.svc.cluster.local).
+  webServiceURL: http://private-cloud-proxy.pulsar.svc.cluster.local.:8080
+  brokerServiceURL: pulsar://private-cloud-proxy.pulsar.svc.cluster.local.:6650
+---
+apiVersion: compute.functionmesh.io/v1alpha1
+kind: Function
+metadata:
+  name: exclaim-pkg-fn
+  namespace: pulsar
+spec:
+  className: org.apache.pulsar.functions.api.examples.ExclamationFunction
+  clusterName: private-cloud
+  forwardSourceMessageProperty: true
+  autoAck: true
+  replicas: 1
+  # Runner image MUST match the cluster's Pulsar version (private-cloud:4.2.1.4 -> Pulsar 4.2.1.4).
+  # A mismatched runner (e.g. 2.9.x) goes Ready but never subscribes.
+  image: streamnative/pulsar-functions-java-runner:4.2.1.4
+  input:
+    topics: [persistent://public/default/pkgfn-input]
+    typeClassName: java.lang.String
+  output:
+    topic: persistent://public/default/pkgfn-output
+    typeClassName: java.lang.String
+  java:
+    jar: api-examples.jar
+    # The jar is DOWNLOADED from package management (needs the role's 'packages' perm):
+    jarLocation: function://public/default/exclaim-pkg@v1
+  pulsar:
+    pulsarConfig: pulsar-fn
+    authConfig:
+      genericAuth:
+        clientAuthenticationPlugin: org.apache.pulsar.client.impl.auth.AuthenticationToken
+        clientAuthenticationParameters: token:REPLACE_WITH_CLIENT_TOKEN
+  resources:
+    requests:
+      cpu: "0.1"
+      memory: 1G
+    limits:
+      cpu: "0.2"
+      memory: 1200M

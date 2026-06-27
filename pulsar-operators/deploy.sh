@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 #
-# One-command deploy of an MCP-enhanced StreamNative Private Cloud (Oxia) cluster:
+# One-command deploy of an MCP-enhanced StreamNative Private Cloud cluster:
 #   sn-operator -> license -> JWT auth secrets -> cert-manager/TLS -> Pulsar cluster -> snmcp
+#
+# Defaults to the ZooKeeper manifest (03-pulsar-zookeeper.yaml) because it supports
+# package management + Function-Mesh jar functions. Use CLUSTER_MANIFEST to switch to
+# Oxia (02-pulsar-oxia.yaml) for a ZK-free cluster (no package management).
 #
 # Usage:
 #   ./deploy.sh
@@ -10,7 +14,8 @@
 #   KUBECTL="microk8s kubectl" HELM="microk8s helm3" ./deploy.sh
 #
 # Toggles (env):
-#   ENABLE_TLS=false   # skip cert-manager + broker TLS
+#   CLUSTER_MANIFEST=02-pulsar-oxia.yaml   # default: 03-pulsar-zookeeper.yaml
+#   ENABLE_TLS=false                       # skip cert-manager + broker TLS
 #   CERT_MANAGER_VERSION=v1.16.2
 #
 # Prerequisites: a StreamNative license (configs/00-license-secret.yaml from the
@@ -23,6 +28,7 @@ HELM="${HELM:-helm}"
 SNCTL="${SNCTL:-snctl}"
 ENABLE_TLS="${ENABLE_TLS:-true}"
 CERT_MANAGER_VERSION="${CERT_MANAGER_VERSION:-v1.16.2}"
+CLUSTER_MANIFEST="${CLUSTER_MANIFEST:-03-pulsar-zookeeper.yaml}"
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIGS="$DIR/configs"
@@ -76,8 +82,8 @@ else
   echo "    ENABLE_TLS=false — skipping (NOTE: 02-pulsar-oxia.yaml references spec.tls; remove it or keep ENABLE_TLS=true)"
 fi
 
-echo "==> [6/8] Pulsar cluster"
-$KUBECTL apply -f "$CONFIGS/02-pulsar-oxia.yaml"
+echo "==> [6/8] Pulsar cluster ($CLUSTER_MANIFEST)"
+$KUBECTL apply -f "$CONFIGS/$CLUSTER_MANIFEST"
 
 echo "==> [7/8] waiting for the cluster"
 for i in $(seq 1 60); do
