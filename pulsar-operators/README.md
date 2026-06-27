@@ -13,6 +13,21 @@ A single `sn-operator` reconciles a `PulsarCoordinator` plus the component CRs
 | `configs/01-pulsar-cluster.yaml` | ZooKeeper (default) | works on older operators |
 | `configs/02-pulsar-oxia.yaml` | Oxia (no ZooKeeper) | needs a recent `sn-operator` — see note below |
 
+### One-command deploy
+
+`deploy.sh` brings up the whole MCP-enhanced stack end to end — operator → license →
+JWT auth secrets → cert-manager/TLS → Oxia cluster → the snmcp MCP server:
+
+```bash
+# provide a license first (see step 2️⃣), then:
+./pulsar-operators/deploy.sh
+# microk8s:
+KUBECTL="microk8s kubectl" HELM="microk8s helm3" ./pulsar-operators/deploy.sh
+```
+
+It's idempotent (re-runnable) and prints the MCP endpoint at the end. Toggle TLS with
+`ENABLE_TLS=false`. The sections below document each step if you'd rather run them by hand.
+
 ### Prerequisites
 
 - Kubernetes v1.16+ with `kubectl` (±1 minor of the cluster) and `helm` v3.0.2+
@@ -205,9 +220,31 @@ curl --cacert /etc/tls/pulsar-broker/ca.crt -H "Authorization: Bearer <token>" \
 > TLS ports (6651/8443) — neither `certSecretName` nor `config.custom` gets them
 > exposed — so external clients still use plaintext + token via the LB.
 
+### MCP server (snmcp)
+
+The StreamNative MCP server runs **in the `pulsar` namespace** (via `snmcp-values.yaml`)
+so it reaches the cluster over in-cluster DNS:
+
+```bash
+helm install snmcp streamnative/snmcp -n pulsar -f ./pulsar-operators/configs/snmcp-values.yaml
+```
+
+- **Pulsar URL** is pinned to the in-cluster proxy (`…proxy.pulsar.svc.cluster.local:8080/6650`).
+- **Auth = multi-session passthrough:** no token is stored on the server — each caller
+  sends `Authorization: Bearer <pulsar-token>`, which snmcp forwards to Pulsar (so the
+  MCP session inherits exactly what that token authorizes). Use the `client` token for
+  scoped access or a superuser token for admin.
+- Exposed on a **LoadBalancer** (`:9090`) for a LAN MCP client (e.g. Claude Desktop):
+
+```
+MCP endpoint : http://<snmcp-LB-ip>:9090/mcp
+Auth header  : Authorization: Bearer <pulsar token>
+```
+
 ### Cleanup
 
 ```bash
+helm uninstall snmcp -n pulsar                                         # MCP server
 kubectl delete -f ./pulsar-operators/configs/01-pulsar-cluster.yaml   # or 02-pulsar-oxia.yaml
 kubectl delete pvc --all -n pulsar                                     # removes data volumes
 helm uninstall sn-operator -n operators

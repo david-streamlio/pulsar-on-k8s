@@ -1,0 +1,27 @@
+# StreamNative MCP Server (snmcp) — values for the local private-cloud lab.
+# Deployed into the `pulsar` namespace alongside the cluster.
+#
+#   helm install snmcp streamnative/snmcp -n pulsar -f snmcp-values.yaml
+#
+# Auth model: snmcp runs in multi-session Pulsar mode — each caller supplies its
+# own `Authorization: Bearer <pulsar-token>` which snmcp forwards to Pulsar. So no
+# token is baked in here; it works with the cluster's JWT auth (use the `client`
+# token for normal ops, a superuser token for admin).
+
+server:
+  readOnly: false
+  httpPath: /mcp
+
+pulsar:
+  # In-cluster proxy (plaintext). Proxy/LB TLS is a separate follow-up; switch to
+  # https://private-cloud-proxy.pulsar.svc.cluster.local:8443 + tls.secretName once
+  # proxy TLS is enabled.
+  webServiceURL: http://private-cloud-proxy.pulsar.svc.cluster.local:8080
+  serviceURL: pulsar://private-cloud-proxy.pulsar.svc.cluster.local:6650
+  tls:
+    enabled: false
+
+# Exposed on the LAN via MetalLB so a LAN Claude Desktop/Code client can reach it.
+service:
+  type: LoadBalancer
+  port: 9090
