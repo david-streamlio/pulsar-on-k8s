@@ -161,6 +161,19 @@ spec:
             JAVA: streamnative/pulsar-functions-java-runner:4.2.1.4
             PYTHON: streamnative/pulsar-functions-python-runner:4.2.1.4
             GO: streamnative/pulsar-functions-go-runner:4.2.1.4
+    # Kafka protocol (KoP) — Kafka clients talk to the broker on :9092.
+    # SASL_PLAINTEXT + SASL/PLAIN: clients pass password "token:<jwt>" (the existing
+    # JWT auth provider validates it). A Kafka topic `t` maps to public/default/t.
+    # NOTE: proxy-side KoP (`PulsarProxy.config.kopProxy`) is NOT usable on the
+    # private-cloud:4.2.1.4 image — the Kafka proxy-extension NAR isn't shipped
+    # (/pulsar/proxyextensions is absent; the KoP NAR registers only a broker
+    # ProtocolHandler, not a ProxyExtension), so enabling kopProxy crashloops the
+    # proxy. Kafka clients connect to the broker directly (in-cluster, or a broker
+    # LoadBalancer with per-broker advertised listeners for external access).
+    protocolHandlers:
+      kop:
+        enabled: true
+        saslAllowedMechanisms: [PLAIN]
     # JWT/token auth internal client identity.
     clientAuth:
       jwt:
