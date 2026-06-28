@@ -31,6 +31,8 @@ data:
     # MQTT (MoP): single record at the dedicated MQTT LB (06-mqtt-external.yaml); the
     # broker-side MoP proxy routes across brokers, so no wildcard/per-broker DNS needed.
     host-record=mqtt.private-cloud.internal,192.168.0.207
+    # Grafana (observability suite in the `monitor` ns; grafana-external LB :3000).
+    host-record=grafana.private-cloud.internal,192.168.0.202
     # LAN infrastructure records (mirror of the manual /etc/hosts on each node):
     # k8s node + etcd hostnames so clients using this resolver don't need their own
     # /etc/hosts entries. host-record gives forward A + reverse PTR; multiple names

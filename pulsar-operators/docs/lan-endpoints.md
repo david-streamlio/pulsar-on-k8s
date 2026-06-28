@@ -27,6 +27,7 @@ an explicit record (safer — typos NXDOMAIN instead of silently resolving; give
 | `kafka.private-cloud.internal` (+ `*.`) | 192.168.0.205 | 9093 | `istio-ingressgateway` (istio-system) | KSN, SASL_SSL + `token:<jwt>`. Wildcard = per-broker SNI passthrough; tracks HPA scale-up. |
 | `pulsar.private-cloud.internal` | 192.168.0.200 | 6650 (binary), 8080 (admin) | `private-cloud-proxy-external` | Pulsar protocol, **plaintext + token** (proxy TLS not exposed externally — see follow-up #9). |
 | `mqtt.private-cloud.internal` | 192.168.0.207 | 1883 → 5682 | `private-cloud-mqtt-external` | MQTT (MoP). LB forwards to the brokers' MoP routing proxy (5682). **Token auth** (JWT as the MQTT CONNECT password); single record (proxy routes across brokers). |
+| `grafana.private-cloud.internal` | 192.168.0.202 | 3000 | `grafana-external` (`monitor` ns) | Observability dashboards (`streamnative/private-cloud-grafana`). Prometheus/node-exporter are ClusterIP-only. See `observability.md`. |
 | (snmcp) | 192.168.0.203 | 9090 | `snmcp` | StreamNative MCP server (`/mcp`); Bearer pulsar token passthrough. No DNS name yet. |
 | (dnsmasq) | 192.168.0.206 | 53 | `kafka-dnsmasq` | This resolver itself. |
 
