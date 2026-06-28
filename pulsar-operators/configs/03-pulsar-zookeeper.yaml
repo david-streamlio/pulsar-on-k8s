@@ -141,7 +141,7 @@ spec:
     certSecretName: pulsar-server-tls
     trustCertsEnabled: true
   # External Kafka (KSN) via the Istio ingress gateway (TLS PASSTHROUGH, per-broker SNI).
-  # Clients reach broker-N.kafka.lab:9093 (SASL_SSL+token); the gateway SNI-routes to the
+  # Clients reach broker-N.kafka.private-cloud.internal:9093 (SASL_SSL+token); the gateway SNI-routes to the
   # broker's external KSN listener on :9095 which terminates TLS with kafka-broker-tls.
   # REQUIRES the per-pod ServiceEntries in 04-ksn-istio-gateway.yaml — the operator does NOT
   # generate them for advertisedListeners[].istioGateway (see docs/ksn-istio-gateway-bug-report.md).
@@ -149,7 +149,7 @@ spec:
   # 9095 is distinct from the internal KSN 9092; pulsar protocol disabled to avoid a 6651 double-bind.
   advertisedListeners:
     - name: external
-      hostTemplate: "$(POD_NAME).kafka.lab"
+      hostTemplate: "$(POD_NAME).kafka.private-cloud.internal"
       protocols:
         pulsar:
           enabled: false
@@ -159,7 +159,7 @@ spec:
           advertisedPort: 9093
           containerPort: 9095
       istioGateway:
-        clusterAddress: kafka.lab
+        clusterAddress: kafka.private-cloud.internal
         selector:
           istio: ingressgateway
         tls:

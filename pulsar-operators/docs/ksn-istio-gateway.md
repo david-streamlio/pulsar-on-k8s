@@ -106,8 +106,8 @@ programmed.
    spec:
      secretName: kafka-broker-tls
      issuerRef: { name: pulsar-ca-issuer, kind: Issuer }
-     commonName: kafka.lab
-     dnsNames: ["kafka.lab", "*.kafka.lab"]
+     commonName: kafka.private-cloud.internal
+     dnsNames: ["kafka.private-cloud.internal", "*.kafka.private-cloud.internal"]
      keystores:
        jks:
          create: true
@@ -130,19 +130,19 @@ programmed.
              passwordSecretRef: { name: kafka-keystore-pass, key: password }
      advertisedListeners:
        - name: external
-         hostTemplate: "$(POD_NAME).kafka.lab"        # $(POD_ID) is NOT a broker env var
+         hostTemplate: "$(POD_NAME).kafka.private-cloud.internal"        # $(POD_ID) is NOT a broker env var
          protocols:
            pulsar: { enabled: false }                 # else an external pulsar listener double-binds 6651
            kafka:  { enabled: true, scheme: SASL_SSL, advertisedPort: 9093, containerPort: 9095 }
          istioGateway:
-           clusterAddress: kafka.lab
+           clusterAddress: kafka.private-cloud.internal
            selector: { istio: ingressgateway }
            tls: { mode: PASSTHROUGH }
    ```
 
 4. **Per-pod ServiceEntries** (the workaround above), one per replica.
 
-5. **Client DNS:** `kafka.lab` and `*.kafka.lab` → ingress gateway LB IP. Kafka client config:
+5. **Client DNS:** `kafka.private-cloud.internal` and `*.kafka.private-cloud.internal` → ingress gateway LB IP. Kafka client config:
    ```properties
    security.protocol=SASL_SSL
    sasl.mechanism=PLAIN

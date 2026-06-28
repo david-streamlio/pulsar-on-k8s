@@ -1,11 +1,13 @@
-# In-cluster dnsmasq that resolves the Kafka domain (and a few LAN infra names) for clients
-# with no DNS server of their own. Wildcards *.kafka.lab + kafka.lab to the Istio ingress
-# gateway LB IP, serves k8s-node/etcd host records, and forwards everything else upstream.
-# Point your client machine's resolver at this Service's LoadBalancer IP (192.168.0.206)
-# (no router conditional-forwarder needed).
+# In-cluster dnsmasq: the LAN edge resolver for clients with no DNS of their own.
+# Naming scheme is <service>.<cluster>.internal (.internal = ICANN-reserved private-use TLD):
+#   *.kafka.private-cloud.internal  -> Istio ingress gateway LB (per-broker SNI; wildcard for HPA)
+#   pulsar.private-cloud.internal   -> Pulsar proxy LB (single record; proxy fronts all brokers)
+# Plus k8s-node/etcd host records, and upstream forwarding for everything else.
+# Point your client machine's resolver at this Service's LoadBalancer IP (192.168.0.206).
+# Endpoint/IP registry: pulsar-operators/docs/lan-endpoints.md.
 #
 # Companion to 03/04-* (external Kafka via the Istio gateway).
-# IMPORTANT: set the gateway IP in the ConfigMap below to your istio-ingressgateway LB IP.
+# IMPORTANT: keep the LB IPs below in sync with the live Service EXTERNAL-IPs.
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -18,8 +20,14 @@ data:
     no-hosts
     server=8.8.8.8
     server=1.1.1.1
-    # *.kafka.lab and kafka.lab -> the Istio ingress gateway LB IP
-    address=/kafka.lab/192.168.0.205
+    # Low TTL so clients re-resolve quickly if an ingress LB IP changes.
+    local-ttl=30
+    # Kafka (KSN): per-broker SNI passthrough, so the whole zone wildcards to the
+    # Istio ingress gateway LB (covers kafka.* bootstrap + *.kafka.* broker names,
+    # incl. HPA scale-up). address=/domain/ip matches the domain and all subdomains.
+    address=/kafka.private-cloud.internal/192.168.0.205
+    # Pulsar: proxy-fronted, so a single exact record (no wildcard) at the proxy LB.
+    host-record=pulsar.private-cloud.internal,192.168.0.200
     # LAN infrastructure records (mirror of the manual /etc/hosts on each node):
     # k8s node + etcd hostnames so clients using this resolver don't need their own
     # /etc/hosts entries. host-record gives forward A + reverse PTR; multiple names
