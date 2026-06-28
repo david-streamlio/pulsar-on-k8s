@@ -1,0 +1,75 @@
+# External Kafka (KSN) via the Istio ingress gateway — supporting resources.
+# Companion to the broker `advertisedListeners[].istioGateway` + `protocolHandlers.kop.tls`
+# config in 03-pulsar-zookeeper.yaml. See docs/ksn-istio-gateway.md (runbook) and
+# docs/ksn-istio-gateway-bug-report.md (the operator ServiceEntry gap this works around).
+#
+# PREREQUISITES (not expressible as CRs here):
+#   1) Istio 1.24.2+ (operator emits networking.istio.io/v1):
+#        istioctl install --set profile=default
+#   2) Expose the Kafka port on the ingress gateway service (the install doesn't):
+#        kubectl patch svc istio-ingressgateway -n istio-system --type=json \
+#          -p '[{"op":"add","path":"/spec/ports/-","value":{"name":"kafka-tls","port":9093,"targetPort":9093,"protocol":"TCP"}}]'
+#   3) JKS keystore password secret referenced by the cert + kop.tls (keep out of git):
+#        kubectl create secret generic kafka-keystore-pass -n pulsar --from-literal=password='<choose-one>'
+#   4) Client DNS: kafka.lab + *.kafka.lab -> the istio-ingressgateway LB IP
+#        (in-cluster dnsmasq, or /etc/hosts / hostAliases on the client).
+#   5) After installing Istio while the operator is already running, restart it so it
+#      re-detects the Istio CRDs:  kubectl rollout restart deploy/sn-operator -n operators
+---
+# Broker-side cert for the external KSN listener (TLS PASSTHROUGH = broker terminates TLS).
+# keystores.jks makes cert-manager emit keystore.jks (KSN needs JKS at /etc/tls/pulsar-kop/).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kafka-broker-tls
+  namespace: pulsar
+spec:
+  secretName: kafka-broker-tls
+  issuerRef:
+    name: pulsar-ca-issuer      # the CA issuer from 03-pulsar-tls.yaml
+    kind: Issuer
+  commonName: kafka.lab
+  dnsNames:
+    - kafka.lab
+    - "*.kafka.lab"
+  keystores:
+    jks:
+      create: true
+      passwordSecretRef:
+        name: kafka-keystore-pass
+        key: password
+---
+# THE GAP FIX: per-pod ServiceEntries. The operator generates per-pod Gateway+VirtualService
+# from advertisedListeners[].istioGateway but NOT the matching ServiceEntry, so the ingress
+# gateway has no routable cluster for the per-pod headless DNS. One per broker replica.
+# NOTE: broker HPA is min2/max6 — scaling past 2 needs broker-2..broker-5 entries too (until
+# the operator auto-generates these; see the bug report).
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: broker-0-kafka-ext
+  namespace: pulsar
+spec:
+  hosts:
+    - private-cloud-broker-0.private-cloud-broker-headless.pulsar.svc.cluster.local
+  location: MESH_INTERNAL
+  ports:
+    - number: 9095
+      name: tcp-kafka-ext
+      protocol: TCP
+  resolution: DNS
+---
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: broker-1-kafka-ext
+  namespace: pulsar
+spec:
+  hosts:
+    - private-cloud-broker-1.private-cloud-broker-headless.pulsar.svc.cluster.local
+  location: MESH_INTERNAL
+  ports:
+    - number: 9095
+      name: tcp-kafka-ext
+      protocol: TCP
+  resolution: DNS

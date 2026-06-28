@@ -140,8 +140,47 @@ spec:
     enabled: true
     certSecretName: pulsar-server-tls
     trustCertsEnabled: true
+  # External Kafka (KSN) via the Istio ingress gateway (TLS PASSTHROUGH, per-broker SNI).
+  # Clients reach broker-N.kafka.lab:9093 (SASL_SSL+token); the gateway SNI-routes to the
+  # broker's external KSN listener on :9095 which terminates TLS with kafka-broker-tls.
+  # REQUIRES the per-pod ServiceEntries in 04-ksn-istio-gateway.yaml — the operator does NOT
+  # generate them for advertisedListeners[].istioGateway (see docs/ksn-istio-gateway-bug-report.md).
+  # hostTemplate uses $(POD_NAME) (NOT $(POD_ID), which isn't a broker env var); containerPort
+  # 9095 is distinct from the internal KSN 9092; pulsar protocol disabled to avoid a 6651 double-bind.
+  advertisedListeners:
+    - name: external
+      hostTemplate: "$(POD_NAME).kafka.lab"
+      protocols:
+        pulsar:
+          enabled: false
+        kafka:
+          enabled: true
+          scheme: SASL_SSL
+          advertisedPort: 9093
+          containerPort: 9095
+      istioGateway:
+        clusterAddress: kafka.lab
+        selector:
+          istio: ingressgateway
+        tls:
+          mode: PASSTHROUGH
   config:
     clusterName: private-cloud
+    # Kafka protocol (KSN). Internal clients use SASL_PLAINTEXT on :9092; the external
+    # listener (above) uses SASL_SSL on :9095. SASL/PLAIN auth: password "token:<jwt>".
+    # kop.tls gives the external listener a JKS keystore (KSN needs JKS, not PEM).
+    protocolHandlers:
+      kop:
+        enabled: true
+        saslAllowedMechanisms: [PLAIN]
+        tls:
+          enabled: true
+          certSecretName: kafka-broker-tls
+          trustCertsEnabled: true
+          clientAuth: none
+          passwordSecretRef:
+            name: kafka-keystore-pass
+            key: password
     # Orca / Function Mesh Worker Service (FMWS): the bundled mesh-worker-service NAR
     # turns the broker's functions-worker into a translator — `pulsar-admin/snctl
     # functions create --jar` becomes a Function Mesh `Function` CRD (no hand-written
