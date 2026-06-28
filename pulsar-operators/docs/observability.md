@@ -41,13 +41,19 @@ Grafana is exposed by the `grafana-external` LoadBalancer on port 3000:
 DNS record is in `configs/05-kafka-dns.yaml`; registry in `lan-endpoints.md`. Prometheus and
 node-exporter are ClusterIP-only (not externally exposed).
 
-## node02 ssd-raid I/O fault — Prometheus worked around 2026-06-28 (array repair still TODO)
+## node02 ssd-raid I/O fault — RESOLVED 2026-06-28 (array repaired)
 
-The `ssd-raid` array (`/dev/md0`) on **node02** returns **write I/O errors** despite being ~0%
-full (`touch` fails; reads partially work) — a **failing/degraded RAID array or bad blocks**, not
-disk-full. Prometheus scraped fine but couldn't persist (`write /data/wal/...: input/output
-error`), and it also hits **bookie bk-2** on node02 (I/O errors in its log). Any `ssd-raid` PVC
-landing on node02 is affected.
+> **Resolved:** node02's `ssd-raid` array was repaired and the node uncordoned. Verified — write
+> test on bk-2's ledger volume OK, 0 I/O errors since restart, all 3 bookies read-write,
+> under-replicated ledger count 0 → full 3-bookie redundancy restored. Prometheus stays on node01
+> (healthy there; its PVC is node01-pinned anyway). The `server.nodeSelector` pin may be dropped
+> now if desired — cosmetic, since the hostpath PVC pins it to node01 regardless.
+
+What happened (kept for reference): the `ssd-raid` array (`/dev/md0`) on **node02** returned
+**write I/O errors** despite being ~0% full (`touch` failed; reads partially worked) — a
+**failing/degraded RAID array or bad blocks**, not disk-full. Prometheus scraped fine but couldn't
+persist (`write /data/wal/...: input/output error`), and it also hit **bookie bk-2** on node02. Any
+`ssd-raid` PVC landing on node02 was affected.
 
 **Worked around (monitoring):** Prometheus moved off node02 — PVC recreated on node01 (the
 metrics history was disposable). Done with:
@@ -72,19 +78,21 @@ nominal capacity — without `retention.size`, Prometheus could grow to fill the
 `/dev/md0` array (and starve the co-located bookie). Verify: `prometheus_tsdb_retention_limit_bytes`
 ≈ 16106127360 (15 GiB).
 
-⚠️ The `nodeSelector` and `--storage.tsdb.retention.size` are **live patches** on the Helm-managed
-deployment. Fold them into the Helm values so a `helm upgrade` doesn't revert them:
+These settings are now persisted in the **Helm release** (`prometheus`, revision 2) so a
+`helm upgrade --reuse-values` keeps them — applied with:
 ```bash
-helm upgrade prometheus prometheus-community/prometheus -n monitor --reuse-values \
+helm upgrade prometheus prometheus-community/prometheus -n monitor --version 27.5.0 --reuse-values \
   --set-string server.nodeSelector."kubernetes\.io/hostname"=k8s-node01.kubernetes.net \
-  --set server.retention=15d --set server.retentionSize=15GB \
+  --set-string server.retention=15d --set-string server.retentionSize=15GB \
   --set server.persistentVolume.size=20Gi
 ```
-Drop the `nodeSelector` once node02's array is repaired.
+(The manually-recreated PVC was first adopted into the release via the `meta.helm.sh/release-name`
++ `-namespace` annotations.) With node02 repaired, the `server.nodeSelector` can be dropped on the
+next upgrade if you prefer free scheduling.
 
-**Still TODO — repair node02's array** (it also endangers bk-2's ledger data). On node02 (sudo):
-1. Diagnose (read-only): `dmesg -T | grep -iE 'I/O error|md0|EXT4-fs error|read-only'`,
-   `cat /proc/mdstat`, `sudo mdadm --detail /dev/md0`, `findmnt /dev/md0`, `smartctl -a` on members.
-2. If degraded → re-add/replace the failed member, resync. If FS remounted read-only/corrupt →
-   drain node02's stateful pods (bk-2, broker), `umount`, `fsck.ext4 -f -y /dev/md0`, remount.
-   If a disk is physically dying (SMART pending/reallocated) → replace it.
+### node02 array repair (DONE 2026-06-28) — reference runbook
+Repaired with sudo on node02: diagnose `dmesg -T | grep -iE 'I/O error|md0|EXT4-fs error|read-only'`,
+`cat /proc/mdstat`, `mdadm --detail /dev/md0`, `findmnt /dev/md0`, `smartctl -a` on members; then by
+cause — degraded → re-add/replace + resync; FS read-only/corrupt → drain stateful pods, `umount`,
+`fsck.ext4 -f -y /dev/md0`, remount; dying disk → replace. After repair: `kubectl uncordon
+k8s-node02…`, restart bk-2 if needed, confirm `listbookies -rw` shows 3 and `listunderreplicated` = 0.
