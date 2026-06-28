@@ -19,6 +19,9 @@ metadata:
   name: pulsar-fn
   namespace: pulsar
 data:
+  # In-cluster proxy FQDN ON PURPOSE — the function pod resolves via CoreDNS. Do NOT change
+  # to the pulsar.private-cloud.internal LAN name (NXDOMAIN in CoreDNS; it lives only in the
+  # edge dnsmasq). See pulsar-operators/docs/lan-endpoints.md.
   # NOTE the TRAILING DOT on the host — marks the name absolute so the function pod's
   # resolver doesn't append the search domain (…svc.cluster.local.pulsar.svc.cluster.local).
   webServiceURL: http://private-cloud-proxy.pulsar.svc.cluster.local.:8080
