@@ -56,12 +56,31 @@ kubectl scale deploy prometheus-server -n monitor --replicas=0
 kubectl patch deploy prometheus-server -n monitor --type=merge \
   -p '{"spec":{"template":{"spec":{"nodeSelector":{"kubernetes.io/hostname":"k8s-node01.kubernetes.net"}}}}}'
 kubectl delete pvc prometheus-server -n monitor
-kubectl apply -f <the PVC manifest>     # same name/size/sc, re-binds on node01 (WaitForFirstConsumer)
+kubectl apply -f <PVC manifest, 20Gi>   # same name/sc, re-binds on node01 (WaitForFirstConsumer)
 kubectl scale deploy prometheus-server -n monitor --replicas=1
 ```
-⚠️ The `nodeSelector` is a live patch on the Helm-managed deployment — fold it into the Helm
-values (`server.nodeSelector`) so a `helm upgrade` doesn't revert it, or drop it once node02 is
-repaired.
+
+## Retention & sizing (prevents the disk filling over time)
+
+PVC is **20Gi** on `ssd-raid`. Prometheus prunes by whichever limit hits first:
+- `--storage.tsdb.retention.time=15d` (chart default)
+- `--storage.tsdb.retention.size=15GB` (added — the hard size cap; ~5Gi headroom under the 20Gi
+  volume for WAL/compaction, which aren't counted in the limit).
+
+The size cap matters because the `microk8s.io/hostpath` provisioner does **not** enforce the PVC's
+nominal capacity — without `retention.size`, Prometheus could grow to fill the whole shared
+`/dev/md0` array (and starve the co-located bookie). Verify: `prometheus_tsdb_retention_limit_bytes`
+≈ 16106127360 (15 GiB).
+
+⚠️ The `nodeSelector` and `--storage.tsdb.retention.size` are **live patches** on the Helm-managed
+deployment. Fold them into the Helm values so a `helm upgrade` doesn't revert them:
+```bash
+helm upgrade prometheus prometheus-community/prometheus -n monitor --reuse-values \
+  --set-string server.nodeSelector."kubernetes\.io/hostname"=k8s-node01.kubernetes.net \
+  --set server.retention=15d --set server.retentionSize=15GB \
+  --set server.persistentVolume.size=20Gi
+```
+Drop the `nodeSelector` once node02's array is repaired.
 
 **Still TODO — repair node02's array** (it also endangers bk-2's ledger data). On node02 (sudo):
 1. Diagnose (read-only): `dmesg -T | grep -iE 'I/O error|md0|EXT4-fs error|read-only'`,
