@@ -1,0 +1,64 @@
+# In-cluster dnsmasq that resolves the Kafka domain for external clients with no DNS server
+# of their own. Wildcards *.kafka.lab + kafka.lab to the Istio ingress gateway LB IP, and
+# forwards everything else upstream. Point your Kafka client machine's resolver at this
+# Service's LoadBalancer IP (no router conditional-forwarder needed).
+#
+# Companion to 03/04-* (external Kafka via the Istio gateway).
+# IMPORTANT: set the gateway IP in the ConfigMap below to your istio-ingressgateway LB IP.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-dnsmasq
+  namespace: pulsar
+data:
+  dnsmasq.conf: |
+    no-resolv
+    no-hosts
+    server=8.8.8.8
+    server=1.1.1.1
+    # *.kafka.lab and kafka.lab -> the Istio ingress gateway LB IP
+    address=/kafka.lab/192.168.0.205
+    log-queries
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-dnsmasq
+  namespace: pulsar
+  labels: { app: kafka-dnsmasq }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: kafka-dnsmasq }
+  template:
+    metadata:
+      labels: { app: kafka-dnsmasq }
+    spec:
+      containers:
+        - name: dnsmasq
+          image: 4km3/dnsmasq:2.90-r3
+          args: ["-k", "--log-facility=-", "--conf-file=/etc/dnsmasq.conf"]
+          ports:
+            - { name: dns-udp, containerPort: 53, protocol: UDP }
+            - { name: dns-tcp, containerPort: 53, protocol: TCP }
+          securityContext:
+            capabilities:
+              add: ["NET_BIND_SERVICE", "NET_ADMIN"]
+          volumeMounts:
+            - { name: conf, mountPath: /etc/dnsmasq.conf, subPath: dnsmasq.conf }
+      volumes:
+        - name: conf
+          configMap: { name: kafka-dnsmasq }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-dnsmasq
+  namespace: pulsar
+spec:
+  type: LoadBalancer
+  selector: { app: kafka-dnsmasq }
+  ports:
+    - { name: dns-udp, port: 53, targetPort: 53, protocol: UDP }
+    - { name: dns-tcp, port: 53, targetPort: 53, protocol: TCP }
