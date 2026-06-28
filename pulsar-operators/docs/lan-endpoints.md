@@ -48,6 +48,16 @@ an explicit record (safer — typos NXDOMAIN instead of silently resolving; give
   JWT as the **password** (MoP token auth). e.g.
   `mosquitto_pub -h mqtt.private-cloud.internal -p 1883 -u user -P "<jwt>" -t mqtt-e2e -m hi`.
   A plain MQTT topic (`mqtt-e2e`) maps to `persistent://public/default/mqtt-e2e`.
+- **Message REST API:** over the Pulsar proxy web port `pulsar.private-cloud.internal:8080`,
+  `Authorization: Bearer <jwt>`. Enabled via `pulsarRestMessagingServiceEnabled` on the broker.
+  - Produce: `POST /admin/rest/topics/v1/persistent/public/default/<topic>/message`
+    (`Content-Type: application/octet-stream`, body = payload) → `201` + msg-id.
+  - Consume: `POST /admin/rest/topics/v1/persistent/public/default/<topic>/<sub>/message`
+    (body `{"timeoutMillis":3000}`) → `200` + payload (`204` if empty).
+  - **Gotcha:** auto-created topics are *partitioned* (`allowAutoTopicCreationType=partitioned`);
+    the REST API produces/consumes cleanly only on a **non-partitioned** topic. Pre-create it
+    (`PUT /admin/v2/persistent/public/default/<topic>` with a superuser token) or address
+    `<topic>-partition-0`. Plain produce auto-creates partitioned → consume returns 204.
 
 ## Adding a future service (e.g. Flink, Spark)
 
