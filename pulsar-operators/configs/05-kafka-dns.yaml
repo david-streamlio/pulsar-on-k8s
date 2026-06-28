@@ -28,13 +28,22 @@ metadata:
   namespace: pulsar
   labels: { app: kafka-dnsmasq }
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels: { app: kafka-dnsmasq }
   template:
     metadata:
       labels: { app: kafka-dnsmasq }
     spec:
+      # Spread the 2 replicas one-per-node so a single node outage (e.g. node00)
+      # leaves a surviving DNS pod. ScheduleAnyway (not DoNotSchedule) so a pod
+      # still schedules if only one node is available rather than going Pending.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: { app: kafka-dnsmasq }
       containers:
         - name: dnsmasq
           image: 4km3/dnsmasq:2.90-r3
@@ -45,6 +54,14 @@ spec:
           securityContext:
             capabilities:
               add: ["NET_BIND_SERVICE", "NET_ADMIN"]
+          # Pull a wedged pod from the LB's endpoints (readiness) and restart it
+          # (liveness) so the surviving replica keeps serving.
+          readinessProbe:
+            tcpSocket: { port: 53 }
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: 53 }
+            periodSeconds: 20
           volumeMounts:
             - { name: conf, mountPath: /etc/dnsmasq.conf, subPath: dnsmasq.conf }
       volumes:
