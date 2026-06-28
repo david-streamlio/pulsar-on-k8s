@@ -26,6 +26,7 @@ an explicit record (safer — typos NXDOMAIN instead of silently resolving; give
 |------|----|-------|-----------|-------|
 | `kafka.private-cloud.internal` (+ `*.`) | 192.168.0.205 | 9093 | `istio-ingressgateway` (istio-system) | KSN, SASL_SSL + `token:<jwt>`. Wildcard = per-broker SNI passthrough; tracks HPA scale-up. |
 | `pulsar.private-cloud.internal` | 192.168.0.200 | 6650 (binary), 8080 (admin) | `private-cloud-proxy-external` | Pulsar protocol, **plaintext + token** (proxy TLS not exposed externally — see follow-up #9). |
+| `mqtt.private-cloud.internal` | 192.168.0.207 | 1883 → 5682 | `private-cloud-mqtt-external` | MQTT (MoP). LB forwards to the brokers' MoP routing proxy (5682). **Token auth** (JWT as the MQTT CONNECT password); single record (proxy routes across brokers). |
 | (snmcp) | 192.168.0.203 | 9090 | `snmcp` | StreamNative MCP server (`/mcp`); Bearer pulsar token passthrough. No DNS name yet. |
 | (dnsmasq) | 192.168.0.206 | 53 | `kafka-dnsmasq` | This resolver itself. |
 
@@ -43,6 +44,10 @@ an explicit record (safer — typos NXDOMAIN instead of silently resolving; give
   `sasl.mechanism=PLAIN`, `password="token:<jwt>"`, PEM truststore = `pulsar-ca` `ca.crt`.
 - **Pulsar:** `pulsar://pulsar.private-cloud.internal:6650`, admin
   `http://pulsar.private-cloud.internal:8080` — `AuthenticationToken` `<jwt>`.
+- **MQTT:** `mqtt.private-cloud.internal:1883` — MQTT CONNECT with any username and the
+  JWT as the **password** (MoP token auth). e.g.
+  `mosquitto_pub -h mqtt.private-cloud.internal -p 1883 -u user -P "<jwt>" -t mqtt-e2e -m hi`.
+  A plain MQTT topic (`mqtt-e2e`) maps to `persistent://public/default/mqtt-e2e`.
 
 ## Adding a future service (e.g. Flink, Spark)
 

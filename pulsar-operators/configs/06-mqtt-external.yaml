@@ -1,0 +1,35 @@
+# External MQTT (MoP) access.
+#
+# MoP is enabled on the broker via config.protocolHandlers.mop (03-pulsar-zookeeper.yaml):
+#   broker MQTT listener  : :1883  (per-broker; serves only that broker's topics)
+#   MoP routing proxy     : :5682  (mqttProxyEnable=true; routes across all brokers)
+# The MoP "proxy" runs ON THE BROKER PODS, not the Pulsar proxy — so the Pulsar proxy LB
+# (6650/8080) does NOT carry MQTT. We publish our own LoadBalancer here.
+#
+# Clients connect to the standard MQTT port 1883 on this LB; it forwards to the brokers'
+# MoP proxy (5682), which routes to whichever broker owns the topic. A single VIP works
+# (no per-broker SNI like Kafka) because the MoP proxy does the cross-broker routing.
+#
+# Auth: MoP enforces the cluster JWT (mqttAuthenticationEnabled in 03). MQTT clients send
+# the token as the CONNECT password. DNS: mqtt.private-cloud.internal -> this LB
+# (configs/05-kafka-dns.yaml). See pulsar-operators/docs/lan-endpoints.md.
+apiVersion: v1
+kind: Service
+metadata:
+  name: private-cloud-mqtt-external
+  namespace: pulsar
+  labels:
+    cloud.streamnative.io/cluster: private-cloud
+    cloud.streamnative.io/component: mqtt
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 192.168.0.207
+  selector:
+    cloud.streamnative.io/app: pulsar
+    cloud.streamnative.io/cluster: private-cloud
+    cloud.streamnative.io/component: broker
+  ports:
+    - name: mqtt
+      port: 1883
+      targetPort: 5682     # brokers' MoP routing proxy (mqttProxyPort)
+      protocol: TCP
