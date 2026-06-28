@@ -4,6 +4,11 @@ kind: ConfigMap
 metadata:
   name: pulsar
 data:
+  # In-cluster proxy FQDN ON PURPOSE — Function Mesh runners are in-cluster pods that
+  # resolve via CoreDNS. Do NOT change these to the pulsar.private-cloud.internal LAN
+  # name: that name lives only in the edge dnsmasq (NXDOMAIN in CoreDNS) and would also
+  # hairpin out to the MetalLB LB. The .internal names are for LAN clients only.
+  # See pulsar-operators/docs/lan-endpoints.md.
   webServiceURL: http://private-cloud-proxy.pulsar.svc.cluster.local:8080
   brokerServiceURL: pulsar://private-cloud-proxy.pulsar.svc.cluster.local:6650
 ---
