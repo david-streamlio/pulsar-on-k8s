@@ -231,6 +231,11 @@ spec:
       PULSAR_PREFIX_mqttAuthenticationEnabled: "true"
       PULSAR_PREFIX_mqttAuthenticationMethods: token
       PULSAR_PREFIX_mqttAuthorizationEnabled: "true"
+      # --- Message REST API: produce/consume over HTTP via the rest-servlet ---
+      # Served on the broker web port (8080); reached externally through the Pulsar proxy
+      # LB (pulsar.private-cloud.internal:8080). Token-authed like the rest of the cluster.
+      # POST /admin/rest/topics/v1/{domain}/{tenant}/{namespace}/{topic}/message
+      PULSAR_PREFIX_pulsarRestMessagingServiceEnabled: "true"
   pod:
     resources:
       requests:
