@@ -35,21 +35,21 @@ reconcilers and omits the ServiceEntry reconciler. This asymmetry is the bug.
    spec:
      advertisedListeners:
        - name: external
-         hostTemplate: "$(POD_NAME).kafka.lab"
+         hostTemplate: "$(POD_NAME).kafka.private-cloud.internal"
          protocols:
            pulsar: { enabled: false }
            kafka:  { enabled: true, scheme: SASL_SSL, advertisedPort: 9093, containerPort: 9095 }
          istioGateway:
-           clusterAddress: kafka.lab
+           clusterAddress: kafka.private-cloud.internal
            selector: { istio: ingressgateway }
            tls: { mode: PASSTHROUGH }
    ```
 
-4. Point `kafka.lab` and `*.kafka.lab` at the ingress gateway LB IP and run a Kafka client
+4. Point `kafka.private-cloud.internal` and `*.kafka.private-cloud.internal` at the ingress gateway LB IP and run a Kafka client
    (`security.protocol=SASL_SSL`, SASL/PLAIN token, PEM truststore of the cluster CA):
 
    ```bash
-   kafka-console-producer.sh --bootstrap-server kafka.lab:9093 --producer.config c.properties --topic t
+   kafka-console-producer.sh --bootstrap-server kafka.private-cloud.internal:9093 --producer.config c.properties --topic t
    ```
 
 ## Expected behavior
@@ -82,7 +82,7 @@ per-pod `outbound|9095||private-cloud-broker-0.private-cloud-broker-headless...`
 
 Kafka client:
 ```
-Connection to node ... (private-cloud-broker-0.kafka.lab/<gw-ip>:9093) terminated during authentication
+Connection to node ... (private-cloud-broker-0.kafka.private-cloud.internal/<gw-ip>:9093) terminated during authentication
 ... failed authentication due to: SSL handshake failed
 TimeoutException: Topic t not present in metadata after 60000 ms
 ```

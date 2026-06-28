@@ -11,7 +11,7 @@
 #          -p '[{"op":"add","path":"/spec/ports/-","value":{"name":"kafka-tls","port":9093,"targetPort":9093,"protocol":"TCP"}}]'
 #   3) JKS keystore password secret referenced by the cert + kop.tls (keep out of git):
 #        kubectl create secret generic kafka-keystore-pass -n pulsar --from-literal=password='<choose-one>'
-#   4) Client DNS: kafka.lab + *.kafka.lab -> the istio-ingressgateway LB IP
+#   4) Client DNS: kafka.private-cloud.internal + *.kafka.private-cloud.internal -> the istio-ingressgateway LB IP
 #        (in-cluster dnsmasq, or /etc/hosts / hostAliases on the client).
 #   5) After installing Istio while the operator is already running, restart it so it
 #      re-detects the Istio CRDs:  kubectl rollout restart deploy/sn-operator -n operators
@@ -28,10 +28,10 @@ spec:
   issuerRef:
     name: pulsar-ca-issuer      # the CA issuer from 03-pulsar-tls.yaml
     kind: Issuer
-  commonName: kafka.lab
+  commonName: kafka.private-cloud.internal
   dnsNames:
-    - kafka.lab
-    - "*.kafka.lab"
+    - kafka.private-cloud.internal
+    - "*.kafka.private-cloud.internal"
   keystores:
     jks:
       create: true
