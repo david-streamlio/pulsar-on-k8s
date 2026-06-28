@@ -181,6 +181,13 @@ spec:
           passwordSecretRef:
             name: kafka-keystore-pass
             key: password
+      # MQTT protocol (MoP). proxyEnabled exposes MQTT through the Pulsar proxy for
+      # external clients (the MoP proxy ships in this image, unlike the KoP proxy).
+      # Default broker MQTT listener :1883 (plaintext); external clients reach it via the
+      # proxy LB. Auth uses the cluster JWT (MQTT CONNECT password = the token).
+      mop:
+        enabled: true
+        proxyEnabled: true
     # Orca / Function Mesh Worker Service (FMWS): the bundled mesh-worker-service NAR
     # turns the broker's functions-worker into a translator — `pulsar-admin/snctl
     # functions create --jar` becomes a Function Mesh `Function` CRD (no hand-written
@@ -217,6 +224,13 @@ spec:
       PULSAR_PREFIX_proxyRoles: proxy-admin
       PULSAR_PREFIX_brokerClientAuthenticationPlugin: org.apache.pulsar.client.impl.auth.AuthenticationToken
       PULSAR_PREFIX_tokenPublicKey: file:///mnt/secrets/my-public.key
+      # --- MQTT (MoP) auth: enforce the cluster JWT on MQTT too ---
+      # MoP authentication defaults OFF even when Pulsar auth is on, so without these
+      # MQTT (broker :1883 and proxy :5682) is an UNAUTHENTICATED backdoor. With them,
+      # clients authenticate by sending the JWT as the MQTT CONNECT password.
+      PULSAR_PREFIX_mqttAuthenticationEnabled: "true"
+      PULSAR_PREFIX_mqttAuthenticationMethods: token
+      PULSAR_PREFIX_mqttAuthorizationEnabled: "true"
   pod:
     resources:
       requests:
