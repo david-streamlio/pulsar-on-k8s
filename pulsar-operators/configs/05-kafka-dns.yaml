@@ -1,7 +1,8 @@
-# In-cluster dnsmasq that resolves the Kafka domain for external clients with no DNS server
-# of their own. Wildcards *.kafka.lab + kafka.lab to the Istio ingress gateway LB IP, and
-# forwards everything else upstream. Point your Kafka client machine's resolver at this
-# Service's LoadBalancer IP (no router conditional-forwarder needed).
+# In-cluster dnsmasq that resolves the Kafka domain (and a few LAN infra names) for clients
+# with no DNS server of their own. Wildcards *.kafka.lab + kafka.lab to the Istio ingress
+# gateway LB IP, serves k8s-node/etcd host records, and forwards everything else upstream.
+# Point your client machine's resolver at this Service's LoadBalancer IP (192.168.0.206)
+# (no router conditional-forwarder needed).
 #
 # Companion to 03/04-* (external Kafka via the Istio gateway).
 # IMPORTANT: set the gateway IP in the ConfigMap below to your istio-ingressgateway LB IP.
@@ -19,6 +20,13 @@ data:
     server=1.1.1.1
     # *.kafka.lab and kafka.lab -> the Istio ingress gateway LB IP
     address=/kafka.lab/192.168.0.205
+    # LAN infrastructure records (mirror of the manual /etc/hosts on each node):
+    # k8s node + etcd hostnames so clients using this resolver don't need their own
+    # /etc/hosts entries. host-record gives forward A + reverse PTR; multiple names
+    # per IP are allowed. Keep in sync with node InternalIPs.
+    host-record=k8s-node00.kubernetes.net,k8s-node00,etcd-node00,192.168.0.80
+    host-record=k8s-node01.kubernetes.net,k8s-node01,etcd-node01,192.168.0.81
+    host-record=k8s-node02.kubernetes.net,k8s-node02,etcd-node02,192.168.0.82
     log-queries
 ---
 apiVersion: apps/v1
